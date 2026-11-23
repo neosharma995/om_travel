@@ -2,53 +2,53 @@
 
 @section('content')
     @php
-        $heroBg = \App\Support\MediaUrl::resolve($siteSettings['hero_image'] ?? null, '/images/seed/hero-coast.jpg');
-        $aboutImg1 = \App\Support\MediaUrl::resolve($siteSettings['about_image_1'] ?? null, '/images/seed/tour-switzerland.jpg');
-        $aboutImg2 = \App\Support\MediaUrl::resolve($siteSettings['about_image_2'] ?? null, '/images/seed/tour-tropical.jpg');
-        $aboutImg3 = \App\Support\MediaUrl::resolve($siteSettings['about_image_3'] ?? null, '/images/seed/cat-hiking.jpg');
+        $heroBg = \App\Support\MediaUrl::resolve($siteSettings['hero_image'] ?? null, '/images/himachal/manali.jpg');
+        $aboutImg1 = \App\Support\MediaUrl::resolve($siteSettings['about_image_1'] ?? null, '/images/himachal/about-1.jpg');
+        $aboutImg2 = \App\Support\MediaUrl::resolve($siteSettings['about_image_2'] ?? null, '/images/himachal/about-2.jpg');
+        $aboutImg3 = \App\Support\MediaUrl::resolve($siteSettings['about_image_3'] ?? null, '/images/himachal/about-3.jpg');
 
         $heroSlides = [
             [
                 'image' => $heroBg,
-                'badge' => 'Curated Luxury Journeys',
+                'badge' => 'Curated Himachal Expeditions',
                 'subtitle' => $siteSettings['hero_subtitle'] ?? 'Get unforgettable pleasure with us',
                 'title' => $siteSettings['hero_title'] ?? 'Natural Wonder of the world',
-                'description' => 'Embark on handpicked expeditions across iconic landscapes, pristine waters, and breathtaking wonders with dedicated specialists.',
+                'description' => 'Embark on handpicked expeditions across iconic snow summits, pine valleys, and sacred monasteries of Himachal Pradesh.',
                 'primary_cta_text' => $siteSettings['hero_primary_cta'] ?? 'Explore Tours',
                 'primary_cta_url' => route('tours.index'),
                 'secondary_cta_text' => $siteSettings['hero_secondary_cta'] ?? 'Our Services',
                 'secondary_cta_url' => '#plan-trip',
             ],
             [
-                'image' => asset('images/seed/tour-switzerland.jpg'),
-                'badge' => 'Alpine Adventures & Glaciers',
-                'subtitle' => 'High Altitude Escapes',
-                'title' => 'Majestic Mountain Peaks & Alpine Wonders',
-                'description' => 'Experience panoramic Swiss summits, turquoise glacial lakes, and secluded chalets guided by seasoned alpine mountaineers.',
+                'image' => asset('images/himachal/spiti.jpg'),
+                'badge' => 'High Altitude Escapes',
+                'subtitle' => 'The Middle Land',
+                'title' => 'Majestic Mountain Peaks & Spiti Wonders',
+                'description' => 'Traverse ancient thousand-year-old Key Gompa, high mountain passes, and turquoise Chandratal Lake.',
                 'primary_cta_text' => 'View Mountain Tours',
-                'primary_cta_url' => route('tours.index', ['category' => 'hiking']),
+                'primary_cta_url' => route('tours.index', ['category' => 'expeditions']),
                 'secondary_cta_text' => 'Popular Destinations',
                 'secondary_cta_url' => '#destinations',
             ],
             [
-                'image' => asset('images/seed/tour-greece.jpg'),
-                'badge' => 'Mediterranean Odysseys',
-                'subtitle' => 'Sun, Sea & Ancient Culture',
-                'title' => 'Unwind Along Sun-Drenched Aegean Coastlines',
-                'description' => 'Sail across whitewashed Greek archipelagos, golden beaches, and centuries of vibrant history with curated private departures.',
-                'primary_cta_text' => 'Explore Coastlines',
+                'image' => asset('images/himachal/dharamshala.jpg'),
+                'badge' => 'Dhauladhar Foothills',
+                'subtitle' => 'Monasteries & Kangra Valleys',
+                'title' => 'Unwind Along Serene Dhauladhar Foothills',
+                'description' => 'Immerse in peaceful Tibetan monasteries, lush Kangra tea gardens, and mountain serenity in McLeodganj.',
+                'primary_cta_text' => 'Explore Valleys',
                 'primary_cta_url' => route('tours.index'),
                 'secondary_cta_text' => 'View Photo Gallery',
                 'secondary_cta_url' => '#gallery',
             ],
             [
-                'image' => asset('images/seed/tour-tropical.jpg'),
-                'badge' => 'Exotic Island Retreats',
-                'subtitle' => 'Tropical Escapes & Lagoons',
-                'title' => 'Bespoke Island Havens & Crystal Waters',
-                'description' => 'Immerse in turquoise lagoons, coral reefs, and tranquil overwater villas designed for rejuvenation and authentic discovery.',
-                'primary_cta_text' => 'Book Paradise',
-                'primary_cta_url' => route('tours.index', ['category' => 'beach']),
+                'image' => asset('images/himachal/shimla.jpg'),
+                'badge' => 'Colonial Heritage & Pine Ridges',
+                'subtitle' => 'Queen of Hills',
+                'title' => 'Timeless Charm Along The Shimla Ridge',
+                'description' => 'Relive the nostalgic UNESCO Kalka-Shimla toy train, historic Viceregal Lodge, and panoramic pine walks.',
+                'primary_cta_text' => 'Book Himachal Holiday',
+                'primary_cta_url' => route('tours.index', ['category' => 'heritage']),
                 'secondary_cta_text' => 'Contact Specialists',
                 'secondary_cta_url' => route('contact.create'),
             ],
@@ -214,7 +214,7 @@
                         <span>{{ $categories->count() }} Handcrafted Travel Styles</span>
                     </div>
                     <p class="categories-head-desc">
-                        From deep ocean voyages and alpine ridge ascents to tranquil island lagoons, choose your signature adventure.
+                        From high-altitude Spiti expeditions and alpine treks to tranquil deodar valleys and sacred Himalayan shrines, choose your signature adventure.
                     </p>
                 </div>
             </div>
@@ -222,6 +222,36 @@
             @if ($categories->isNotEmpty())
                 @php
                     $categoryMeta = [
+                        'trekking' => [
+                            'tag' => 'Alpine & Valley Trails',
+                            'desc' => 'Scenic Himalayan ridges, Kheerganga hot springs & expert-guided mountain trails.',
+                            'badge' => 'Trekking',
+                        ],
+                        'adventure' => [
+                            'tag' => 'Aerial & River Thrills',
+                            'desc' => 'Tandem paragliding over Bir Billing, white-water rafting in Kullu & snow adventures.',
+                            'badge' => 'Adventure',
+                        ],
+                        'spiritual' => [
+                            'tag' => 'Sacred Monasteries',
+                            'desc' => 'Ancient Tibetan Gompas in Spiti, Dalai Lama temple & tranquil wooden pagoda shrines.',
+                            'badge' => 'Spiritual',
+                        ],
+                        'scenic-valleys' => [
+                            'tag' => 'Emerald Valleys',
+                            'desc' => 'Lush meadows of Khajjiar, Sangla apple orchards & pristine Tirthan trout streams.',
+                            'badge' => 'Nature Escapes',
+                        ],
+                        'heritage' => [
+                            'tag' => 'Colonial & Royal Lore',
+                            'desc' => 'Historic Shimla Ridge, UNESCO Kalka toy train & timeless temples of Chamba.',
+                            'badge' => 'Heritage',
+                        ],
+                        'expeditions' => [
+                            'tag' => 'High-Altitude Circuits',
+                            'desc' => 'Rugged Spiti Valley cold desert, Chandratal Lake & dramatic Kunzum Pass routes.',
+                            'badge' => 'Expedition',
+                        ],
                         'cruises' => [
                             'tag' => 'Maritime Journeys',
                             'desc' => 'Luxury ocean voyages, private catamarans & sunset sails across pristine coastal waters.',
@@ -332,12 +362,72 @@
 
             @if ($popularDestinations->isNotEmpty())
                 @php
-                    $featuredSlug = 'maldives';
+                    $featuredSlug = 'manali';
                     $featuredDestination = $popularDestinations->firstWhere('slug', $featuredSlug) ?? $popularDestinations->first();
                     $otherDestinations = $popularDestinations->reject(fn ($d) => $d->id === $featuredDestination?->id);
                     $orderedDestinations = $featuredDestination ? collect([$featuredDestination])->concat($otherDestinations) : $popularDestinations;
 
                     $destMeta = [
+                        'manali' => [
+                            'region' => 'Kullu Valley',
+                            'tagline' => 'Snow-clad Solang peaks, Rohtang Pass, deodar pine groves & vibrant riverside cafes.',
+                            'badge' => 'Top Mountain Haven',
+                        ],
+                        'spiti-valley' => [
+                            'region' => 'Trans-Himalayas',
+                            'tagline' => 'Ancient cliffside monasteries, cold desert canyons & turquoise Chandratal Lake.',
+                            'badge' => 'Cold Desert Wonder',
+                        ],
+                        'shimla' => [
+                            'region' => 'Southern Himachal',
+                            'tagline' => 'Colonial British architecture, Kalka-Shimla heritage toy train & pine-cloaked ridge walks.',
+                            'badge' => 'Queen of Hills',
+                        ],
+                        'dharamshala' => [
+                            'region' => 'Kangra Valley',
+                            'tagline' => 'Tibetan spiritual sanctuary, home to the Dalai Lama, surrounded by Dhauladhar peaks.',
+                            'badge' => 'Spiritual Retreat',
+                        ],
+                        'kasol' => [
+                            'region' => 'Parvati Valley',
+                            'tagline' => 'Riverside pine trails, bohemian mountain culture & the scenic Kheerganga hot springs trek.',
+                            'badge' => 'Valley of Gods',
+                        ],
+                        'kinnaur' => [
+                            'region' => 'Indo-Tibetan Border',
+                            'tagline' => 'Sangla Valley apple orchards, Kamru Fort & sacred sunrise views of Kinnaur Kailash.',
+                            'badge' => 'Sacred Frontier',
+                        ],
+                        'khajjiar' => [
+                            'region' => 'Chamba District',
+                            'tagline' => 'The Mini Switzerland of India featuring a saucer-shaped meadow and floating island lake.',
+                            'badge' => 'Alpine Meadow',
+                        ],
+                        'dalhousie' => [
+                            'region' => 'Dhauladhar Foothills',
+                            'tagline' => 'Misty Victorian hill town set across five pine-clad hills with panoramic valley vistas.',
+                            'badge' => 'Colonial Charm',
+                        ],
+                        'bir-billing' => [
+                            'region' => 'Kangra District',
+                            'tagline' => 'World-renowned paragliding capital, serene Buddhist monasteries & tea gardens.',
+                            'badge' => 'Aero Sports Hub',
+                        ],
+                        'tirthan-valley' => [
+                            'region' => 'Great Himalayan NP',
+                            'tagline' => 'Untouched trout streams, traditional Kathkuni wooden cottages & Serolsar Lake.',
+                            'badge' => 'Eco Sanctuary',
+                        ],
+                        'kullu' => [
+                            'region' => 'Beas River Valley',
+                            'tagline' => 'White-water river rafting, ancient wooden pagoda temples & authentic Himachali craft.',
+                            'badge' => 'Valley of Gods',
+                        ],
+                        'chamba' => [
+                            'region' => 'Ravi River Valley',
+                            'tagline' => 'Centuries-old Lakshmi Narayan temples, miniature pahari paintings & royal history.',
+                            'badge' => 'Ancient Heritage',
+                        ],
                         'maldives' => [
                             'region' => 'Indian Ocean',
                             'tagline' => 'Crystal lagoons, secluded atolls & luxury overwater villas crafted for pure escapism.',
@@ -581,6 +671,51 @@
             @if ($featuredTours->isNotEmpty())
                 @php
                     $packageMeta = [
+                        'spiti-valley-high-altitude-expedition' => [
+                            'tag' => 'Trans-Himalayan Circuit',
+                            'highlight' => 'Flagship Expedition',
+                            'summary' => 'Cold desert mountain passes, ancient Key Gompa, Hikkim post office, and stargazing beside Chandratal Lake.',
+                        ],
+                        'manali-rohtang-pass-alpine-escape' => [
+                            'tag' => 'Alpine Snow Escapes',
+                            'highlight' => 'Signature Valley Tour',
+                            'summary' => 'Snow-clad Rohtang Pass, Solang adventures, deodar cedar resorts, and peaceful Old Manali riverside strolls.',
+                        ],
+                        'shimla-colonial-heritage-toy-train' => [
+                            'tag' => 'Colonial Heritage',
+                            'highlight' => 'Heritage Odyssey',
+                            'summary' => 'Historic UNESCO Kalka-Shimla mountain rail, Viceregal Lodge, Christ Church, and panoramic pine-cloaked Kufri.',
+                        ],
+                        'dharamshala-mcleodganj-spiritual-retreat' => [
+                            'tag' => 'Spiritual Sanctuary',
+                            'highlight' => 'Cultural Retreat',
+                            'summary' => 'Tsuglagkhang Dalai Lama temple, serene Norbulingka art institute, Bhagsu falls, and lush Kangra tea gardens.',
+                        ],
+                        'kasol-kheerganga-trekking-odyssey' => [
+                            'tag' => 'Parvati Valley Trails',
+                            'highlight' => 'Trekking Journey',
+                            'summary' => 'Riverside deodar trails, Kheerganga natural sulphur hot springs, campfire stargazing, and Tosh village.',
+                        ],
+                        'bir-billing-paragliding-tibetan-culture' => [
+                            'tag' => 'Himalayan Aero Sports',
+                            'highlight' => 'Adventure Tour',
+                            'summary' => 'Tandem paragliding from Billing launch site, Chokling Tibetan monastery, and serene tea garden sunsets.',
+                        ],
+                        'kinnaur-sangla-kalpa-odyssey' => [
+                            'tag' => 'Kinnaur Kailash Circuit',
+                            'highlight' => 'Bespoke Expedition',
+                            'summary' => 'Sangla Valley apple orchards, Kamru Fort, Chitkul border village, and sacred Kinnaur Kailash sunrise glow.',
+                        ],
+                        'dalhousie-khajjiar-mini-switzerland-tour' => [
+                            'tag' => 'Mini Switzerland Meadow',
+                            'highlight' => 'Scenic Family Escape',
+                            'summary' => 'Fairytale saucer meadow of Khajjiar, Kalatop wildlife sanctuary pine walks, and Victorian colonial elegance.',
+                        ],
+                        'tirthan-valley-great-himalayan-national-park' => [
+                            'tag' => 'Pristine Eco Valley',
+                            'highlight' => 'Offbeat Sanctuary',
+                            'summary' => 'Crystal trout streams, handcrafted deodar cottages, Serolsar Lake hike, and Great Himalayan National Park.',
+                        ],
                         'greece-tour-package' => [
                             'tag' => 'Mediterranean Odyssey',
                             'highlight' => 'Flagship Journey',
@@ -665,7 +800,7 @@
                                     <div class="package-price-wrap">
                                         <span class="package-price-prefix">From</span>
                                         <div class="package-price-amount">
-                                            <span class="package-currency">$</span>
+                                            <span class="package-currency">₹</span>
                                             <span class="package-val">{{ number_format((float) $tour->price, 0) }}</span>
                                             <span class="package-unit">/ Person</span>
                                         </div>
@@ -828,7 +963,7 @@
                         <span>Certified Expedition Leaders</span>
                     </div>
                     <p class="guides-header-desc">
-                        Seasoned naturalists, alpine navigators, and cultural storytellers dedicated to safe, deeply enriching journeys.
+                        Seasoned Himalayan naturalists, certified mountaineers, and native cultural storytellers dedicated to safe, deeply enriching journeys.
                     </p>
                 </div>
             </div>
@@ -917,7 +1052,7 @@
                         <span>1,420+ Verified Traveler Reviews</span>
                     </div>
                     <p class="testimonials-header-desc">
-                        Real reflections and candid memories from globetrotters who explored the world with OmTravel.
+                        Real reflections and candid memories from travelers who explored the mountains of Himachal Pradesh with OmTravel.
                     </p>
                 </div>
             </div>
@@ -1051,7 +1186,7 @@
                 <div class="section-head">
                     <span class="section-script">Stories &amp; Dispatches</span>
                     <h2 class="section-title">News &amp; Articles From {{ $siteSettings['site_name'] ?? 'OmTravel' }}</h2>
-                    <p class="magazine-head-sub">Curated expedition guides, seasonal travel notes, and culture dispatches from our global specialists.</p>
+                    <p class="magazine-head-sub">Curated Himachal expedition guides, seasonal mountain notes, and cultural dispatches from our regional specialists.</p>
                 </div>
                 <a href="{{ route('blog.index') }}" class="btn btn-outline-soft magazine-see-all-link">
                     <span>See More Articles</span>

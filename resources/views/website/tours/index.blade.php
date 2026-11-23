@@ -90,7 +90,6 @@
                                             <option value="{{ $dest->slug }}" @selected($filters['destination'] === $dest->slug)>{{ $dest->name }}</option>
                                         @endforeach
                                     </select>
-                                    <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
                             </div>
 
@@ -107,7 +106,6 @@
                                             <option value="{{ $cat->slug }}" @selected($filters['category'] === $cat->slug)>{{ $cat->name }}</option>
                                         @endforeach
                                     </select>
-                                    <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
                             </div>
 
@@ -124,7 +122,6 @@
                                             <option value="{{ $type->slug }}" @selected($filters['tour_type'] === $type->slug)>{{ $type->name }}</option>
                                         @endforeach
                                     </select>
-                                    <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
                             </div>
 
@@ -141,18 +138,17 @@
                                         <option value="medium" @selected($filters['duration'] === 'medium')>4 - 6 Days</option>
                                         <option value="long" @selected($filters['duration'] === 'long')>7+ Days</option>
                                     </select>
-                                    <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
                             </div>
 
-                            {{-- Max Budget ($) --}}
+                            {{-- Max Budget (₹) --}}
                             <div class="form-group filter-group">
                                 <label for="filter-price" class="form-label filter-label">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                    <span>Max Budget ($)</span>
+                                    <span>Max Budget (₹)</span>
                                 </label>
                                 <div class="filter-input-wrap">
-                                    <input type="number" id="filter-price" name="max_price" value="{{ $filters['max_price'] }}" min="0" step="10" class="form-control" placeholder="e.g. 1200">
+                                    <input type="number" id="filter-price" name="max_price" value="{{ $filters['max_price'] }}" min="0" step="10" class="form-control" placeholder="e.g. 50000">
                                 </div>
                             </div>
 
@@ -234,7 +230,7 @@
                                 @endif
                                 @if (!empty($filters['max_price']))
                                     <span class="active-filter-pill">
-                                        Budget ≤ ${{ $filters['max_price'] }}
+                                        Budget ≤ ₹{{ $filters['max_price'] }}
                                         <a href="{{ route('tours.index', array_merge(request()->except('max_price', 'page'))) }}" class="remove-filter-pill" aria-label="Remove max price filter">&times;</a>
                                     </span>
                                 @endif
@@ -312,7 +308,7 @@
                                             <div class="discovery-price-lockup tour-price-line">
                                                 <span class="price-eyebrow">From</span>
                                                 <div class="price-val-row">
-                                                    <span class="price-amount">${{ number_format((float) $tour->price, 0) }}</span>
+                                                    <span class="price-amount">₹{{ number_format((float) $tour->price, 0) }}</span>
                                                     <span class="price-suffix">/ guest</span>
                                                 </div>
                                             </div>

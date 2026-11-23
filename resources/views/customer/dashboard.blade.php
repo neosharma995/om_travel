@@ -30,7 +30,7 @@
         </div>
         <div class="kpi-card">
             <div class="kpi-label">Total Travel Spend</div>
-            <div class="kpi-value">${{ number_format($stats['totalSpent'], 0) }}</div>
+            <div class="kpi-value">₹{{ number_format($stats['totalSpent'], 0) }}</div>
             <div class="kpi-sub">Excludes cancelled trips</div>
         </div>
     </div>
@@ -60,7 +60,7 @@
                                     <div style="font-size: 12px; color: var(--admin-muted);">{{ $booking->guests }} {{ \Illuminate\Support\Str::plural('guest', $booking->guests) }}</div>
                                 </td>
                                 <td>{{ $booking->travel_date->format('M d, Y') }}</td>
-                                <td>${{ number_format((float) $booking->total_price, 2) }}</td>
+                                <td>₹{{ number_format((float) $booking->total_price, 2) }}</td>
                                 <td>
                                     <span class="badge {{ $booking->status === 'confirmed' ? 'badge-success' : ($booking->status === 'cancelled' ? 'badge-danger' : 'badge-warning') }}">
                                         {{ $booking->status }}

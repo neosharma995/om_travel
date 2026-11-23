@@ -38,7 +38,7 @@
                                 </div>
                             </td>
                             <td>{{ $tour->destination?->name ?? '—' }}</td>
-                            <td>${{ number_format((float) $tour->price, 2) }}</td>
+                            <td>₹{{ number_format((float) $tour->price, 2) }}</td>
                             <td>{{ $tour->displayDuration() }}</td>
                             <td>
                                 <span class="badge {{ $tour->is_featured ? 'badge-success' : 'badge-neutral' }}">

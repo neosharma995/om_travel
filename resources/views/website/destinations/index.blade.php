@@ -8,14 +8,31 @@
             <div class="destinations-banner-content">
                 <span class="destinations-eyebrow">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                    Curated Global Sanctuaries
+                    Curated Himachal Sanctuaries
                 </span>
                 <h1 class="page-banner-title">World Destinations &amp; Odysseys</h1>
-                <p class="destinations-banner-desc">From crystalline turquoise lagoons and secluded coral atolls to dramatic alpine summits and sun-drenched coastal cliffs, discover our handcrafted travel sanctuaries.</p>
+                <p class="destinations-banner-desc">From snow-crowned summits in Manali and sacred high-altitude monasteries in Spiti to pine-scented valleys in Kinnaur, Dharamshala, and Tirthan, discover our handcrafted Himachal sanctuaries.</p>
                 <div class="breadcrumb">
                     <a href="{{ route('home') }}">Home</a>
                     <span>&rsaquo;</span>
                     <span>Destinations</span>
+                </div>
+
+                <div class="destinations-banner-stats">
+                    <div class="dest-banner-stat-item">
+                        <span class="dest-stat-val">{{ $destinations->count() }}</span>
+                        <span class="dest-stat-lbl">Curated Sanctuaries</span>
+                    </div>
+                    <div class="dest-banner-stat-divider"></div>
+                    <div class="dest-banner-stat-item">
+                        <span class="dest-stat-val">100%</span>
+                        <span class="dest-stat-lbl">Verified Guides</span>
+                    </div>
+                    <div class="dest-banner-stat-divider"></div>
+                    <div class="dest-banner-stat-item">
+                        <span class="dest-stat-val">Bespoke</span>
+                        <span class="dest-stat-lbl">Custom Itineraries</span>
+                    </div>
                 </div>
             </div>
         </div>

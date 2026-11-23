@@ -389,7 +389,7 @@
                         <div class="booking-card-header">
                             <span class="booking-card-eyebrow">Reserve Your Passage</span>
                             <div class="booking-price-line">
-                                <span class="booking-price-curr">$</span>
+                                <span class="booking-price-curr">₹</span>
                                 <span class="booking-price-amount" id="tourUnitPrice" data-price="{{ (float) $tour->price }}">{{ number_format((float) $tour->price, 2) }}</span>
                                 <span class="booking-price-period">/ Person</span>
                             </div>
@@ -405,7 +405,7 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                                 <span>Estimated Total:</span>
                             </div>
-                            <strong class="est-total-value" id="liveBookingTotal">${{ number_format((float) $tour->price * (int) old('guests', 2), 2) }}</strong>
+                            <strong class="est-total-value" id="liveBookingTotal">₹{{ number_format((float) $tour->price * (int) old('guests', 2), 2) }}</strong>
                         </div>
 
                         {{-- Alert Notifications --}}
@@ -544,7 +544,7 @@
                                     </h3>
 
                                     <div class="tour-price-line">
-                                        <span class="price-val">${{ number_format((float) $related->price, 2) }}</span>
+                                        <span class="price-val">₹{{ number_format((float) $related->price, 2) }}</span>
                                         <span class="price-unit">/ Person</span>
                                     </div>
 

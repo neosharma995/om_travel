@@ -48,7 +48,7 @@
     </div>
 
     <div class="form-group">
-        <label for="price" class="form-label">Price Per Person ($) *</label>
+        <label for="price" class="form-label">Price Per Person (₹) *</label>
         <input type="number" id="price" name="price" value="{{ old('price', $tour->price) }}" step="0.01" min="0" class="form-control" required>
     </div>
 

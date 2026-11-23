@@ -578,3 +578,35 @@ test('tour package detail page renders destination hero, itinerary milestones, i
     ]);
 });
 
+test('terms and conditions page renders successfully with transparent booking standards', function () {
+    $this->get(route('terms'))
+        ->assertOk()
+        ->assertSee('Terms &amp; Conditions', false)
+        ->assertSee('Agreement to Terms')
+        ->assertSee('Indian Rupees (₹)')
+        ->assertSee('Cancellations, Amendments &amp; Refund Schedule', false)
+        ->assertSee('Limitation of Liability');
+
+    $this->get('/terms-and-conditions')
+        ->assertRedirect(route('terms'));
+});
+
+test('privacy policy page renders successfully with data protection standards', function () {
+    $this->get(route('privacy'))
+        ->assertOk()
+        ->assertSee('Privacy Policy')
+        ->assertSee('Our Commitment to Traveler Privacy')
+        ->assertSee('Categories of Information We Collect')
+        ->assertSee('Data Security &amp; Storage Protocols', false)
+        ->assertSee('Contacting Our Data Protection Officer');
+
+    $this->get('/privacy-policy')
+        ->assertRedirect(route('privacy'));
+});
+
+test('footer includes working links to terms and privacy policy', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee(route('terms'))
+        ->assertSee(route('privacy'));
+});

@@ -187,9 +187,9 @@
                 <div class="footer-col">
                     <h3 class="footer-heading">Support</h3>
                     <ul class="footer-links">
-                        <li><a href="{{ route('home') }}#faq">FAQs</a></li>
-                        <li><a href="{{ route('contact.create') }}#terms">Terms &amp; Conditions</a></li>
-                        <li><a href="{{ route('contact.create') }}#privacy">Privacy Policy</a></li>
+                        <!-- <li><a href="{{ route('home') }}#faq">FAQs</a></li> -->
+                        <li><a href="{{ route('terms') }}">Terms &amp; Conditions</a></li>
+                        <li><a href="{{ route('privacy') }}">Privacy Policy</a></li>
                         <li><a href="{{ route('contact.create') }}">Contact Us</a></li>
                     </ul>
                 </div>

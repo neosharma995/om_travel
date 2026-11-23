@@ -40,7 +40,7 @@
                             <td>{{ $booking->tour?->title ?? 'Deleted Tour' }}</td>
                             <td>{{ $booking->travel_date->format('M d, Y') }}</td>
                             <td>{{ $booking->guests }}</td>
-                            <td>${{ number_format((float) $booking->total_price, 2) }}</td>
+                            <td>₹{{ number_format((float) $booking->total_price, 2) }}</td>
                             <td>
                                 <span class="badge {{ $booking->status === 'confirmed' ? 'badge-success' : ($booking->status === 'cancelled' ? 'badge-danger' : 'badge-warning') }}">
                                     {{ $booking->status }}

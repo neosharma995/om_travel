@@ -19,7 +19,7 @@
                     <tr><th>Phone</th><td>{{ $booking->customer_phone ?: '—' }}</td></tr>
                     <tr><th>Travel Date</th><td>{{ $booking->travel_date->format('F d, Y') }}</td></tr>
                     <tr><th>Guests</th><td>{{ $booking->guests }}</td></tr>
-                    <tr><th>Total Price</th><td><strong>${{ number_format((float) $booking->total_price, 2) }}</strong></td></tr>
+                    <tr><th>Total Price</th><td><strong>₹{{ number_format((float) $booking->total_price, 2) }}</strong></td></tr>
                     <tr><th>Special Requests</th><td>{{ $booking->special_requests ?: 'None' }}</td></tr>
                 </tbody>
             </table>

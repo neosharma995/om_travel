@@ -762,7 +762,7 @@ function initTourBookingGuestCalc() {
     const updateTotal = () => {
         const guests = parseInt(guestsInput.value, 10) || 1;
         const total = price * Math.max(1, guests);
-        liveTotalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        liveTotalEl.textContent = `₹${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
     guestsInput.addEventListener('input', updateTotal);

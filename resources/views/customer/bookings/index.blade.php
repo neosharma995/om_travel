@@ -46,7 +46,7 @@
                             </td>
                             <td>{{ $booking->travel_date->format('M d, Y') }}</td>
                             <td>{{ $booking->guests }}</td>
-                            <td><strong>${{ number_format((float) $booking->total_price, 2) }}</strong></td>
+                            <td><strong>₹{{ number_format((float) $booking->total_price, 2) }}</strong></td>
                             <td>
                                 <span class="badge {{ $booking->status === 'confirmed' ? 'badge-success' : ($booking->status === 'cancelled' ? 'badge-danger' : 'badge-warning') }}">
                                     {{ $booking->status }}
