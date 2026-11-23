@@ -12,6 +12,7 @@ use App\Models\Testimonial;
 use App\Models\Tour;
 use App\Models\TourCategory;
 use App\Models\TourGuide;
+use App\Models\TourType;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -22,6 +23,7 @@ class DashboardController extends Controller
             'toursCount' => Tour::query()->count(),
             'destinationsCount' => Destination::query()->count(),
             'categoriesCount' => TourCategory::query()->count(),
+            'tourTypesCount' => TourType::query()->count(),
             'galleryCount' => GalleryItem::query()->count(),
             'guidesCount' => TourGuide::query()->count(),
             'testimonialsCount' => Testimonial::query()->count(),

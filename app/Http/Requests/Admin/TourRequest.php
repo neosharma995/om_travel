@@ -22,6 +22,7 @@ class TourRequest extends FormRequest
         return [
             'destination_id' => ['nullable', 'exists:destinations,id'],
             'tour_category_id' => ['nullable', 'exists:tour_categories,id'],
+            'tour_type_id' => ['nullable', 'exists:tour_types,id'],
             'title' => ['required', 'string', 'max:160'],
             'slug' => ['nullable', 'string', 'max:180', Rule::unique('tours', 'slug')->ignore($tourId)],
             'location' => ['nullable', 'string', 'max:160'],

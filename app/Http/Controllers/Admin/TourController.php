@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\TourRequest;
 use App\Models\Destination;
 use App\Models\Tour;
 use App\Models\TourCategory;
+use App\Models\TourType;
 use App\Support\MediaUrl;
 use App\Support\SlugGenerator;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +18,7 @@ class TourController extends Controller
     public function index(): View
     {
         $tours = Tour::query()
-            ->with(['destination', 'category'])
+            ->with(['destination', 'category', 'tourType'])
             ->ordered()
             ->paginate(15);
 
@@ -39,6 +40,7 @@ class TourController extends Controller
             ]),
             'destinations' => Destination::query()->ordered()->get(),
             'categories' => TourCategory::query()->ordered()->get(),
+            'tourTypes' => TourType::query()->ordered()->get(),
         ]);
     }
 
@@ -54,8 +56,9 @@ class TourController extends Controller
         );
 
         Tour::query()->create([
-            'destination_id' => $validated['destination_id'] ?: null,
-            'tour_category_id' => $validated['tour_category_id'] ?: null,
+            'destination_id' => ($validated['destination_id'] ?? null) ?: null,
+            'tour_category_id' => ($validated['tour_category_id'] ?? null) ?: null,
+            'tour_type_id' => ($validated['tour_type_id'] ?? null) ?: null,
             'title' => $validated['title'],
             'slug' => SlugGenerator::unique('tours', $validated['slug'] ?? $validated['title']),
             'location' => $validated['location'] ?? null,
@@ -84,6 +87,7 @@ class TourController extends Controller
             'tour' => $tour,
             'destinations' => Destination::query()->ordered()->get(),
             'categories' => TourCategory::query()->ordered()->get(),
+            'tourTypes' => TourType::query()->ordered()->get(),
         ]);
     }
 
@@ -99,8 +103,9 @@ class TourController extends Controller
         );
 
         $tour->update([
-            'destination_id' => $validated['destination_id'] ?: null,
-            'tour_category_id' => $validated['tour_category_id'] ?: null,
+            'destination_id' => ($validated['destination_id'] ?? null) ?: null,
+            'tour_category_id' => ($validated['tour_category_id'] ?? null) ?: null,
+            'tour_type_id' => ($validated['tour_type_id'] ?? null) ?: null,
             'title' => $validated['title'],
             'slug' => SlugGenerator::unique('tours', $validated['slug'] ?? $validated['title'], $tour->id),
             'location' => $validated['location'] ?? null,

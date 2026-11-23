@@ -1595,6 +1595,19 @@ p {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
+.tour-card-type-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background-color: rgba(255, 255, 255, 0.92);
+    color: var(--primary-dark);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 11px;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 4px 12px rgba(17, 61, 72, 0.14);
+}
+
 .tour-card-body {
     padding: 22px 20px;
     display: flex;
@@ -2540,7 +2553,7 @@ p {
 
 .filter-form {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) auto;
     gap: 14px;
     align-items: end;
 }

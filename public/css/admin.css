@@ -13,6 +13,7 @@
     --admin-warning: #C97D0C;
     --font-heading: 'Manrope', sans-serif;
     --font-body: 'Inter', sans-serif;
+    --admin-header-height: 74px;
 }
 
 *,
@@ -72,7 +73,9 @@ img {
 }
 
 .admin-brand {
-    padding: 20px 22px;
+    height: var(--admin-header-height);
+    flex-shrink: 0;
+    padding: 0 22px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
@@ -106,6 +109,8 @@ img {
 
 .admin-brand-sub {
     font-size: 11px;
+    line-height: 1.25;
+    margin-top: 2px;
     color: #9EE2F3;
 }
 
@@ -170,7 +175,8 @@ img {
     z-index: 40;
     background-color: #FFFFFF;
     border-bottom: 1px solid var(--admin-border);
-    padding: 14px 28px;
+    min-height: var(--admin-header-height);
+    padding: 10px 40px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -218,11 +224,10 @@ img {
 }
 
 .admin-content {
-    padding: 28px;
+    padding: 20px 40px;
     flex: 1;
     width: 100%;
-    max-width: 1500px;
-    margin: 0 auto;
+    max-width: 100%;
 }
 
 
@@ -739,7 +744,11 @@ textarea.form-control {
         grid-template-columns: 1fr;
     }
 
+    .admin-topbar {
+        padding: 10px 20px;
+    }
+
     .admin-content {
-        padding: 18px;
+        padding: 20px;
     }
 }

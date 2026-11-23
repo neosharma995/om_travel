@@ -33,6 +33,9 @@
                         @if ($tour->category)
                             <span class="meta-pill">{{ $tour->category->name }}</span>
                         @endif
+                        @if ($tour->tourType)
+                            <span class="meta-pill">{{ $tour->tourType->name }}</span>
+                        @endif
                     </div>
 
                     <h2>Overview</h2>

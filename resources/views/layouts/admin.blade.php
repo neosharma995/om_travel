@@ -38,6 +38,10 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
                     <span>Tour Categories</span>
                 </a>
+                <a href="{{ route('admin.tour-types.index') }}" class="admin-nav-link {{ request()->routeIs('admin.tour-types.*') ? 'is-active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    <span>Tour Types</span>
+                </a>
                 <a href="{{ route('admin.destinations.index') }}" class="admin-nav-link {{ request()->routeIs('admin.destinations.*') ? 'is-active' : '' }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     <span>Destinations</span>

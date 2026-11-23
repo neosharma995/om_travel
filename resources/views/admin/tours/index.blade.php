@@ -30,7 +30,12 @@
                             <td><img src="{{ $tour->imageUrl() }}" alt="{{ $tour->title }}" class="admin-thumb"></td>
                             <td>
                                 <strong>{{ $tour->title }}</strong>
-                                <div style="font-size: 12px; color: var(--admin-muted);">{{ $tour->category?->name ?? 'Uncategorized' }}</div>
+                                <div style="font-size: 12px; color: var(--admin-muted);">
+                                    {{ $tour->category?->name ?? 'Uncategorized' }}
+                                    @if ($tour->tourType)
+                                        &bull; {{ $tour->tourType->name }}
+                                    @endif
+                                </div>
                             </td>
                             <td>{{ $tour->destination?->name ?? '—' }}</td>
                             <td>${{ number_format((float) $tour->price, 2) }}</td>

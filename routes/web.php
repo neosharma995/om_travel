@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialControll
 use App\Http\Controllers\Admin\TourCategoryController as AdminTourCategoryController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TourGuideController as AdminTourGuideController;
+use App\Http\Controllers\Admin\TourTypeController as AdminTourTypeController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BookingController;
@@ -72,6 +73,7 @@ Route::prefix('admin')
         Route::put('/settings', [SiteSettingController::class, 'update'])->name('settings.update');
 
         Route::resource('categories', AdminTourCategoryController::class)->except(['show']);
+        Route::resource('tour-types', AdminTourTypeController::class)->except(['show']);
         Route::resource('destinations', AdminDestinationController::class)->except(['show']);
         Route::resource('tours', AdminTourController::class)->except(['show']);
         Route::resource('gallery', AdminGalleryItemController::class)->except(['show']);

@@ -12,6 +12,7 @@ use App\Models\Testimonial;
 use App\Models\Tour;
 use App\Models\TourCategory;
 use App\Models\TourGuide;
+use App\Models\TourType;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -63,6 +64,28 @@ class DatabaseSeeder extends Seeder
                     'name' => $categoryData['name'],
                     'image' => $categoryData['image'],
                     'sort_order' => $categoryData['sort_order'],
+                    'is_active' => true,
+                ]
+            );
+        }
+
+        $tourTypes = [
+            ['name' => 'Luxury Escape', 'slug' => 'luxury-escape', 'description' => 'Handpicked five-star cliffside hotels, private transfers, and elevated coastal or island retreats.', 'sort_order' => 1],
+            ['name' => 'Adventure & Trek', 'slug' => 'adventure-trek', 'description' => 'Active alpine trails, reef excursions, and small-group outdoor exploration led by certified guides.', 'sort_order' => 2],
+            ['name' => 'Honeymoon & Romance', 'slug' => 'honeymoon-romance', 'description' => 'Intimate villas, sunset cruises, and secluded beachfront dining designed for couples.', 'sort_order' => 3],
+            ['name' => 'Family Holiday', 'slug' => 'family-holiday', 'description' => 'Flexible multi-age itineraries with relaxed pacing and kid-friendly sightseeing.', 'sort_order' => 4],
+            ['name' => 'Group Tour', 'slug' => 'group-tour', 'description' => 'Curated social journeys with shared excursions, boat charters, and lively local experiences.', 'sort_order' => 5],
+            ['name' => 'Private Custom', 'slug' => 'private-custom', 'description' => 'Tailor-made routes with dedicated skippers, private drivers, and bespoke daily schedules.', 'sort_order' => 6],
+        ];
+
+        $tourTypeModels = [];
+        foreach ($tourTypes as $tourTypeData) {
+            $tourTypeModels[$tourTypeData['slug']] = TourType::query()->updateOrCreate(
+                ['slug' => $tourTypeData['slug']],
+                [
+                    'name' => $tourTypeData['name'],
+                    'description' => $tourTypeData['description'],
+                    'sort_order' => $tourTypeData['sort_order'],
                     'is_active' => true,
                 ]
             );
@@ -139,6 +162,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'greece-tour-package',
                 'destination_slug' => 'greece',
                 'category_slug' => 'beach',
+                'tour_type_slug' => 'luxury-escape',
                 'location' => 'Santorini & Mykonos, Greece',
                 'price' => 980.00,
                 'duration_days' => 7,
@@ -156,6 +180,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'italy-coast-sail-package',
                 'destination_slug' => 'italy',
                 'category_slug' => 'cruises',
+                'tour_type_slug' => 'private-custom',
                 'location' => 'Amalfi Coast & Capri, Italy',
                 'price' => 890.00,
                 'duration_days' => 5,
@@ -173,6 +198,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'switzerland-alpine-escape',
                 'destination_slug' => 'switzerland',
                 'category_slug' => 'hiking',
+                'tour_type_slug' => 'adventure-trek',
                 'location' => 'Zermatt & Interlaken, Switzerland',
                 'price' => 1150.00,
                 'duration_days' => 6,
@@ -190,6 +216,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'maldives-lagoon-retreat',
                 'destination_slug' => 'maldives',
                 'category_slug' => 'beach',
+                'tour_type_slug' => 'honeymoon-romance',
                 'location' => 'Baa Atoll, Maldives',
                 'price' => 1280.00,
                 'duration_days' => 5,
@@ -207,6 +234,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'thailand-emerald-cove-tour',
                 'destination_slug' => 'thailand',
                 'category_slug' => 'island-hopping',
+                'tour_type_slug' => 'group-tour',
                 'location' => 'Phang Nga & Krabi, Thailand',
                 'price' => 680.00,
                 'duration_days' => 4,
@@ -224,6 +252,7 @@ class DatabaseSeeder extends Seeder
                 'slug' => 'coral-reef-diving-adventure',
                 'destination_slug' => 'maldives',
                 'category_slug' => 'snorkeling',
+                'tour_type_slug' => 'adventure-trek',
                 'location' => 'Ari Atoll, Maldives',
                 'price' => 540.00,
                 'duration_days' => 3,
@@ -245,6 +274,7 @@ class DatabaseSeeder extends Seeder
                 [
                     'destination_id' => $destinationModels[$tourData['destination_slug']]->id ?? null,
                     'tour_category_id' => $categoryModels[$tourData['category_slug']]->id ?? null,
+                    'tour_type_id' => $tourTypeModels[$tourData['tour_type_slug']]->id ?? null,
                     'title' => $tourData['title'],
                     'location' => $tourData['location'],
                     'price' => $tourData['price'],
