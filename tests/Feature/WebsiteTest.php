@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Activity;
 use App\Models\BlogPost;
 use App\Models\Booking;
 use App\Models\Destination;
@@ -578,3 +579,29 @@ test('tour package detail page renders destination hero, itinerary milestones, i
     ]);
 });
 
+test('tours index filters by activity and tour detail page displays activity', function () {
+    $sailing = Activity::factory()->create(['name' => 'Catamaran Sailing', 'slug' => 'catamaran-sailing']);
+    $trekking = Activity::factory()->create(['name' => 'Alpine Trekking', 'slug' => 'alpine-trekking']);
+
+    $sailingTour = Tour::factory()->create([
+        'activity_id' => $sailing->id,
+        'title' => 'Cyclades Catamaran Voyage',
+        'is_active' => true,
+    ]);
+
+    $trekTour = Tour::factory()->create([
+        'activity_id' => $trekking->id,
+        'title' => 'Bernese Oberland Trek',
+        'is_active' => true,
+    ]);
+
+    $this->get(route('tours.index', ['activity' => 'catamaran-sailing']))
+        ->assertOk()
+        ->assertSee('Catamaran Sailing')
+        ->assertSee($sailingTour->title)
+        ->assertDontSee($trekTour->title);
+
+    $this->get(route('tours.show', $sailingTour))
+        ->assertOk()
+        ->assertSee('Catamaran Sailing');
+});

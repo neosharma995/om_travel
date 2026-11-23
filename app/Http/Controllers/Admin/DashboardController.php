@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Activity;
 use App\Models\BlogPost;
 use App\Models\Booking;
 use App\Models\Destination;
@@ -24,6 +25,7 @@ class DashboardController extends Controller
             'destinationsCount' => Destination::query()->count(),
             'categoriesCount' => TourCategory::query()->count(),
             'tourTypesCount' => TourType::query()->count(),
+            'activitiesCount' => Activity::query()->count(),
             'galleryCount' => GalleryItem::query()->count(),
             'guidesCount' => TourGuide::query()->count(),
             'testimonialsCount' => Testimonial::query()->count(),

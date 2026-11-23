@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Activity;
 use App\Models\BlogPost;
 use App\Models\Booking;
 use App\Models\Destination;
@@ -315,4 +316,61 @@ test('admin can manage tour types and assign them to tour packages', function ()
         ->assertRedirect(route('admin.tour-types.index'));
 
     $this->assertDatabaseMissing('tour_types', ['id' => $tourType->id]);
+});
+
+test('admin can manage activities with image upload and assign them to tour packages', function () {
+    Storage::fake('public');
+    $photo = UploadedFile::fake()->image('kayaking.jpg', 800, 600);
+
+    $this->post(route('admin.activities.store'), [
+        'name' => 'Lagoon Kayaking',
+        'description' => 'Guided sea kayaking in emerald coves.',
+        'image_file' => $photo,
+        'sort_order' => 1,
+        'is_active' => '1',
+    ])->assertRedirect(route('admin.activities.index'));
+
+    $activity = Activity::query()->where('name', 'Lagoon Kayaking')->firstOrFail();
+    Storage::disk('public')->assertExists($activity->image);
+
+    $this->get(route('admin.activities.index'))
+        ->assertOk()
+        ->assertSee('Lagoon Kayaking');
+
+    $destination = Destination::factory()->create();
+    $category = TourCategory::factory()->create();
+
+    $this->post(route('admin.tours.store'), [
+        'destination_id' => $destination->id,
+        'tour_category_id' => $category->id,
+        'activity_id' => $activity->id,
+        'title' => 'Krabi Kayak Expedition',
+        'price' => 720.00,
+        'duration_days' => 4,
+        'rating' => 4.8,
+        'is_active' => '1',
+    ])->assertRedirect(route('admin.tours.index'));
+
+    $this->assertDatabaseHas('tours', [
+        'title' => 'Krabi Kayak Expedition',
+        'activity_id' => $activity->id,
+    ]);
+
+    $this->put(route('admin.activities.update', $activity), [
+        'name' => 'Open Sea Kayaking',
+        'description' => 'Coastal paddling routes.',
+        'image' => $activity->image,
+        'sort_order' => 2,
+    ])->assertRedirect(route('admin.activities.index'));
+
+    $this->assertDatabaseHas('activities', [
+        'id' => $activity->id,
+        'name' => 'Open Sea Kayaking',
+        'is_active' => false,
+    ]);
+
+    $this->delete(route('admin.activities.destroy', $activity))
+        ->assertRedirect(route('admin.activities.index'));
+
+    $this->assertDatabaseMissing('activities', ['id' => $activity->id]);
 });

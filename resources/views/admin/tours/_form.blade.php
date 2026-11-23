@@ -43,6 +43,17 @@
     </div>
 
     <div class="form-group">
+        <label for="activity_id" class="form-label">Activity</label>
+        <select id="activity_id" name="activity_id" class="form-control">
+            <option value="">None</option>
+            @foreach ($activities as $act)
+                <option value="{{ $act->id }}" @selected((string) old('activity_id', $tour->activity_id) === (string) $act->id)>{{ $act->name }}</option>
+            @endforeach
+        </select>
+        @error('activity_id') <span class="field-error">{{ $message }}</span> @enderror
+    </div>
+
+    <div class="form-group">
         <label for="location" class="form-label">Location Subtitle</label>
         <input type="text" id="location" name="location" value="{{ old('location', $tour->location) }}" class="form-control" placeholder="e.g. Santorini &amp; Mykonos, Greece">
     </div>

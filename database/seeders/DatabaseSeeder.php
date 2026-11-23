@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Activity;
 use App\Models\BlogPost;
 use App\Models\Booking;
 use App\Models\Destination;
@@ -91,6 +92,29 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        $activities = [
+            ['name' => 'Catamaran Sailing', 'slug' => 'catamaran-sailing', 'image' => '/images/seed/cat-cruise.jpg', 'description' => 'Island-to-island catamaran voyages across calm turquoise waters.', 'sort_order' => 1],
+            ['name' => 'Alpine Trekking', 'slug' => 'alpine-trekking', 'image' => '/images/seed/cat-hiking.jpg', 'description' => 'Scenic glacier ridge hikes and panoramic mountain trails with expert leaders.', 'sort_order' => 2],
+            ['name' => 'Reef Snorkeling', 'slug' => 'reef-snorkeling', 'image' => '/images/seed/cat-diving.jpg', 'description' => 'Guided marine excursions over vibrant coral gardens and lagoon reefs.', 'sort_order' => 3],
+            ['name' => 'Lagoon Kayaking', 'slug' => 'lagoon-kayaking', 'image' => '/images/seed/tour-tropical.jpg', 'description' => 'Sea kayak routes through limestone coves and emerald coastal passages.', 'sort_order' => 4],
+            ['name' => 'Wildlife Safari', 'slug' => 'wildlife-safari', 'image' => '/images/seed/cat-wildlife.jpg', 'description' => 'Guided wildlife spotting expeditions in protected coastal and reserve habitats.', 'sort_order' => 5],
+            ['name' => 'Sunset Yachting', 'slug' => 'sunset-yachting', 'image' => '/images/seed/cat-beach.jpg', 'description' => 'Evening coastal cruises with open decks, local tastings, and caldera views.', 'sort_order' => 6],
+        ];
+
+        $activityModels = [];
+        foreach ($activities as $activityData) {
+            $activityModels[$activityData['slug']] = Activity::query()->updateOrCreate(
+                ['slug' => $activityData['slug']],
+                [
+                    'name' => $activityData['name'],
+                    'image' => $activityData['image'],
+                    'description' => $activityData['description'],
+                    'sort_order' => $activityData['sort_order'],
+                    'is_active' => true,
+                ]
+            );
+        }
+
         $destinations = [
             [
                 'name' => 'Thailand',
@@ -163,6 +187,7 @@ class DatabaseSeeder extends Seeder
                 'destination_slug' => 'greece',
                 'category_slug' => 'beach',
                 'tour_type_slug' => 'luxury-escape',
+                'activity_slug' => 'catamaran-sailing',
                 'location' => 'Santorini & Mykonos, Greece',
                 'price' => 980.00,
                 'duration_days' => 7,
@@ -181,6 +206,7 @@ class DatabaseSeeder extends Seeder
                 'destination_slug' => 'italy',
                 'category_slug' => 'cruises',
                 'tour_type_slug' => 'private-custom',
+                'activity_slug' => 'sunset-yachting',
                 'location' => 'Amalfi Coast & Capri, Italy',
                 'price' => 890.00,
                 'duration_days' => 5,
@@ -199,6 +225,7 @@ class DatabaseSeeder extends Seeder
                 'destination_slug' => 'switzerland',
                 'category_slug' => 'hiking',
                 'tour_type_slug' => 'adventure-trek',
+                'activity_slug' => 'alpine-trekking',
                 'location' => 'Zermatt & Interlaken, Switzerland',
                 'price' => 1150.00,
                 'duration_days' => 6,
@@ -217,6 +244,7 @@ class DatabaseSeeder extends Seeder
                 'destination_slug' => 'maldives',
                 'category_slug' => 'beach',
                 'tour_type_slug' => 'honeymoon-romance',
+                'activity_slug' => 'sunset-yachting',
                 'location' => 'Baa Atoll, Maldives',
                 'price' => 1280.00,
                 'duration_days' => 5,
@@ -235,6 +263,7 @@ class DatabaseSeeder extends Seeder
                 'destination_slug' => 'thailand',
                 'category_slug' => 'island-hopping',
                 'tour_type_slug' => 'group-tour',
+                'activity_slug' => 'lagoon-kayaking',
                 'location' => 'Phang Nga & Krabi, Thailand',
                 'price' => 680.00,
                 'duration_days' => 4,
@@ -253,6 +282,7 @@ class DatabaseSeeder extends Seeder
                 'destination_slug' => 'maldives',
                 'category_slug' => 'snorkeling',
                 'tour_type_slug' => 'adventure-trek',
+                'activity_slug' => 'reef-snorkeling',
                 'location' => 'Ari Atoll, Maldives',
                 'price' => 540.00,
                 'duration_days' => 3,
@@ -275,6 +305,7 @@ class DatabaseSeeder extends Seeder
                     'destination_id' => $destinationModels[$tourData['destination_slug']]->id ?? null,
                     'tour_category_id' => $categoryModels[$tourData['category_slug']]->id ?? null,
                     'tour_type_id' => $tourTypeModels[$tourData['tour_type_slug']]->id ?? null,
+                    'activity_id' => $activityModels[$tourData['activity_slug']]->id ?? null,
                     'title' => $tourData['title'],
                     'location' => $tourData['location'],
                     'price' => $tourData['price'],

@@ -23,6 +23,7 @@ class Tour extends Model
         'destination_id',
         'tour_category_id',
         'tour_type_id',
+        'activity_id',
         'title',
         'slug',
         'location',
@@ -69,6 +70,11 @@ class Tour extends Model
     public function tourType(): BelongsTo
     {
         return $this->belongsTo(TourType::class, 'tour_type_id');
+    }
+
+    public function activity(): BelongsTo
+    {
+        return $this->belongsTo(Activity::class, 'activity_id');
     }
 
     public function bookings(): HasMany

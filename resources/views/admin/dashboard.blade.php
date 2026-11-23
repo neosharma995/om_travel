@@ -8,7 +8,7 @@
         <div class="kpi-card">
             <div class="kpi-label">Tour Packages</div>
             <div class="kpi-value">{{ $stats['toursCount'] }}</div>
-            <div class="kpi-sub">{{ $stats['categoriesCount'] }} Categories &bull; {{ $stats['tourTypesCount'] }} Types &bull; {{ $stats['destinationsCount'] }} Destinations</div>
+            <div class="kpi-sub">{{ $stats['categoriesCount'] }} Categories &bull; {{ $stats['tourTypesCount'] }} Types &bull; {{ $stats['activitiesCount'] }} Activities &bull; {{ $stats['destinationsCount'] }} Destinations</div>
         </div>
         <div class="kpi-card">
             <div class="kpi-label">Tour Bookings</div>
