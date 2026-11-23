@@ -81,8 +81,8 @@
                     <ul class="nav-links">
                         <li><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'is-active' : '' }}">Home</a></li>
                         <li><a href="{{ route('tours.index') }}" class="{{ request()->routeIs('tours.*') ? 'is-active' : '' }}">Tours</a></li>
-                        <li><a href="{{ route('home') }}#destinations" class="{{ request()->routeIs('destinations.*') ? 'is-active' : '' }}">Destinations</a></li>
-                        <li><a href="{{ route('home') }}#gallery">Gallery</a></li>
+                        <li><a href="{{ route('destinations.index') }}" class="{{ request()->routeIs('destinations.*') ? 'is-active' : '' }}">Destinations</a></li>
+                        <li><a href="{{ route('gallery.index') }}" class="{{ request()->routeIs('gallery.*') ? 'is-active' : '' }}">Gallery</a></li>
                         <li><a href="{{ route('blog.index') }}" class="{{ request()->routeIs('blog.*') ? 'is-active' : '' }}">Blog</a></li>
                         <li><a href="{{ route('contact.create') }}" class="{{ request()->routeIs('contact.*') ? 'is-active' : '' }}">Contact Us</a></li>
                     </ul>
@@ -177,8 +177,8 @@
                     <ul class="footer-links">
                         <li><a href="{{ route('home') }}">Home</a></li>
                         <li><a href="{{ route('tours.index') }}">Tours</a></li>
-                        <li><a href="{{ route('home') }}#destinations">Destinations</a></li>
-                        <li><a href="{{ route('home') }}#gallery">Gallery</a></li>
+                        <li><a href="{{ route('destinations.index') }}">Destinations</a></li>
+                        <li><a href="{{ route('gallery.index') }}">Gallery</a></li>
                         <li><a href="{{ route('blog.index') }}">Blog</a></li>
                     </ul>
                 </div>

@@ -18,6 +18,7 @@ class HomeController extends Controller
     {
         $categories = TourCategory::query()
             ->active()
+            ->withCount(['tours' => fn (Builder $query): Builder => $query->active()])
             ->ordered()
             ->get();
 

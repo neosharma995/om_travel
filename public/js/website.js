@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initStatCounters();
     initScrollTopButton();
     initDemoLoginButtons();
+    initToursFilterToggle();
+    initGalleryPageFilters();
+    initTourBookingGuestCalc();
 });
 
 function initStickyHeader() {
@@ -496,6 +499,25 @@ function initTestimonialShowcase() {
         dotsWrap.appendChild(dot);
     });
 
+    const prevBtn = document.getElementById('testimonialPrevBtn');
+    const nextBtn = document.getElementById('testimonialNextBtn');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            centerIdx = (centerIdx - 1 + cards.length) % cards.length;
+            renderWindow();
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            centerIdx = (centerIdx + 1) % cards.length;
+            renderWindow();
+        });
+    }
+
     renderWindow();
 }
 
@@ -646,3 +668,105 @@ function initDemoLoginButtons() {
         });
     });
 }
+
+function initToursFilterToggle() {
+    const toggleBtn = document.getElementById('toursFilterToggle');
+    const sidebar = document.getElementById('toursFilterSidebar');
+    if (!toggleBtn || !sidebar) {
+        return;
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        const isOpen = sidebar.classList.toggle('is-open');
+        toggleBtn.setAttribute('aria-expanded', String(isOpen));
+        const span = toggleBtn.querySelector('span');
+        if (span) {
+            span.textContent = isOpen ? 'Hide Filters' : 'Filter Journeys';
+        }
+    });
+}
+
+function initGalleryPageFilters() {
+    const filterTabs = Array.from(document.querySelectorAll('[data-gallery-filter]'));
+    const cards = Array.from(document.querySelectorAll('.photo-masonry-card'));
+    if (filterTabs.length === 0 || cards.length === 0) {
+        return;
+    }
+
+    filterTabs.forEach((tab) => {
+        tab.addEventListener('click', (e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey) {
+                return;
+            }
+            e.preventDefault();
+            const target = (tab.getAttribute('data-gallery-filter') || 'all').toLowerCase();
+
+            filterTabs.forEach((t) => {
+                const isActive = t === tab;
+                t.classList.toggle('is-active', isActive);
+                t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+
+            let visibleCount = 0;
+            cards.forEach((card) => {
+                const itemCat = (card.getAttribute('data-photo-category') || '').toLowerCase();
+                const itemLoc = (card.getAttribute('data-photo-location') || '').toLowerCase();
+                const itemTitle = (card.getAttribute('data-photo-title') || '').toLowerCase();
+
+                const matches = target === 'all'
+                    || itemCat.includes(target)
+                    || itemLoc.includes(target)
+                    || itemTitle.includes(target);
+
+                if (matches) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            const emptyNotice = document.getElementById('galleryEmptyNotice');
+            if (emptyNotice) {
+                emptyNotice.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            const newUrl = tab.getAttribute('href');
+            if (newUrl && window.history && window.history.replaceState) {
+                window.history.replaceState(null, '', newUrl);
+            }
+        });
+    });
+
+    cards.forEach((card) => {
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                card.click();
+            }
+        });
+    });
+}
+
+function initTourBookingGuestCalc() {
+    const guestsInput = document.getElementById('guests');
+    const unitPriceEl = document.getElementById('tourUnitPrice');
+    const liveTotalEl = document.getElementById('liveBookingTotal');
+
+    if (!guestsInput || !unitPriceEl || !liveTotalEl) {
+        return;
+    }
+
+    const price = parseFloat(unitPriceEl.getAttribute('data-price')) || 0;
+
+    const updateTotal = () => {
+        const guests = parseInt(guestsInput.value, 10) || 1;
+        const total = price * Math.max(1, guests);
+        liveTotalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    guestsInput.addEventListener('input', updateTotal);
+    guestsInput.addEventListener('change', updateTotal);
+}
+
+

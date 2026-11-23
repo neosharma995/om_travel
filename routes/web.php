@@ -21,6 +21,7 @@ use App\Http\Controllers\Customer\DashboardController as CustomerDashboardContro
 use App\Http\Controllers\Customer\InquiryController as CustomerInquiryController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\DestinationController;
+use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TourController;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +30,9 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/tours', [TourController::class, 'index'])->name('tours.index');
 Route::get('/tours/{tour:slug}', [TourController::class, 'show'])->name('tours.show');
 Route::post('/tours/{tour:slug}/book', [BookingController::class, 'store'])->name('tours.book');
+Route::get('/destinations', [DestinationController::class, 'index'])->name('destinations.index');
 Route::get('/destinations/{destination:slug}', [DestinationController::class, 'show'])->name('destinations.show');
+Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{blogPost:slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/contact', [ContactController::class, 'create'])->name('contact.create');
