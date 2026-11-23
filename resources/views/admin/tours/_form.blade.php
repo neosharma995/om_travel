@@ -32,6 +32,17 @@
     </div>
 
     <div class="form-group">
+        <label for="tour_type_id" class="form-label">Tour Type</label>
+        <select id="tour_type_id" name="tour_type_id" class="form-control">
+            <option value="">None</option>
+            @foreach ($tourTypes as $type)
+                <option value="{{ $type->id }}" @selected((string) old('tour_type_id', $tour->tour_type_id) === (string) $type->id)>{{ $type->name }}</option>
+            @endforeach
+        </select>
+        @error('tour_type_id') <span class="field-error">{{ $message }}</span> @enderror
+    </div>
+
+    <div class="form-group">
         <label for="location" class="form-label">Location Subtitle</label>
         <input type="text" id="location" name="location" value="{{ old('location', $tour->location) }}" class="form-control" placeholder="e.g. Santorini &amp; Mykonos, Greece">
     </div>

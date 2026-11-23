@@ -44,6 +44,16 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="filter-tour-type" class="form-label">Tour Type</label>
+                        <select id="filter-tour-type" name="tour_type" class="form-control">
+                            <option value="">All Tour Types</option>
+                            @foreach ($tourTypes as $type)
+                                <option value="{{ $type->slug }}" @selected($filters['tour_type'] === $type->slug)>{{ $type->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label for="filter-duration" class="form-label">Duration</label>
                         <select id="filter-duration" name="duration" class="form-control">
                             <option value="">Any Duration</option>
@@ -76,6 +86,9 @@
                                 <img src="{{ $tour->imageUrl() }}" alt="{{ $tour->title }}" loading="lazy">
                                 @if ($tour->destination)
                                     <span class="tour-card-badge">{{ $tour->destination->name }}</span>
+                                @endif
+                                @if ($tour->tourType)
+                                    <span class="tour-card-type-badge">{{ $tour->tourType->name }}</span>
                                 @endif
                             </a>
                             <div class="tour-card-body">

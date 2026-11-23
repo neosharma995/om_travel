@@ -244,6 +244,9 @@
                                 @if ($tour->destination)
                                     <span class="tour-card-badge">{{ $tour->destination->name }}</span>
                                 @endif
+                                @if ($tour->tourType)
+                                    <span class="tour-card-type-badge">{{ $tour->tourType->name }}</span>
+                                @endif
                             </a>
                             <div class="tour-card-body">
                                 <h3 class="tour-card-title">

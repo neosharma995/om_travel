@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Destination;
 use App\Models\Tour;
 use App\Models\TourCategory;
+use App\Models\TourType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -24,6 +25,7 @@ class TourFactory extends Factory
         return [
             'destination_id' => Destination::factory(),
             'tour_category_id' => TourCategory::factory(),
+            'tour_type_id' => TourType::factory(),
             'title' => $title,
             'slug' => Str::slug($title).'-'.fake()->unique()->numberBetween(100, 999),
             'location' => fake()->city().', '.fake()->country(),

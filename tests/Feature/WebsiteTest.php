@@ -10,6 +10,7 @@ use App\Models\Testimonial;
 use App\Models\Tour;
 use App\Models\TourCategory;
 use App\Models\TourGuide;
+use App\Models\TourType;
 
 test('homepage renders all travel sections with normal css only', function () {
     SiteSetting::setMany(['hero_title' => 'Natural Wonder of the world']);
@@ -194,4 +195,37 @@ test('contact page renders and stores valid inquiry while rejecting invalid payl
         'subject' => 'Group Tour Question',
         'status' => 'new',
     ]);
+});
+
+test('tours index filters by tour type and tour detail page displays tour type', function () {
+    $luxuryType = TourType::factory()->create(['name' => 'Luxury Escape', 'slug' => 'luxury-escape']);
+    $trekType = TourType::factory()->create(['name' => 'Adventure Trek', 'slug' => 'adventure-trek']);
+
+    $luxuryTour = Tour::factory()->create([
+        'tour_type_id' => $luxuryType->id,
+        'title' => 'Amalfi Private Retreat',
+        'is_featured' => true,
+        'is_active' => true,
+    ]);
+
+    $trekTour = Tour::factory()->create([
+        'tour_type_id' => $trekType->id,
+        'title' => 'Dolomites Summit Circuit',
+        'is_featured' => false,
+        'is_active' => true,
+    ]);
+
+    $this->get(route('tours.index', ['tour_type' => 'luxury-escape']))
+        ->assertOk()
+        ->assertSee('Luxury Escape')
+        ->assertSee($luxuryTour->title)
+        ->assertDontSee($trekTour->title);
+
+    $this->get(route('tours.show', $luxuryTour))
+        ->assertOk()
+        ->assertSee('Luxury Escape');
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Luxury Escape');
 });

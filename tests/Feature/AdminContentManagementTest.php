@@ -10,6 +10,7 @@ use App\Models\Testimonial;
 use App\Models\Tour;
 use App\Models\TourCategory;
 use App\Models\TourGuide;
+use App\Models\TourType;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -263,4 +264,55 @@ test('admin can update site settings and hero image and see changes on homepage'
         ->assertOk()
         ->assertSee('Explore Untouched Horizons')
         ->assertSee('15');
+});
+
+test('admin can manage tour types and assign them to tour packages', function () {
+    $this->post(route('admin.tour-types.store'), [
+        'name' => 'Luxury Cruises',
+        'description' => 'Private yachts and ocean liners.',
+        'sort_order' => 1,
+        'is_active' => '1',
+    ])->assertRedirect(route('admin.tour-types.index'));
+
+    $tourType = TourType::query()->where('name', 'Luxury Cruises')->firstOrFail();
+
+    $this->get(route('admin.tour-types.index'))
+        ->assertOk()
+        ->assertSee('Luxury Cruises');
+
+    $destination = Destination::factory()->create();
+    $category = TourCategory::factory()->create();
+
+    $this->post(route('admin.tours.store'), [
+        'destination_id' => $destination->id,
+        'tour_category_id' => $category->id,
+        'tour_type_id' => $tourType->id,
+        'title' => 'Mediterranean Yacht Journey',
+        'price' => 1450.00,
+        'duration_days' => 5,
+        'rating' => 4.9,
+        'is_active' => '1',
+    ])->assertRedirect(route('admin.tours.index'));
+
+    $this->assertDatabaseHas('tours', [
+        'title' => 'Mediterranean Yacht Journey',
+        'tour_type_id' => $tourType->id,
+    ]);
+
+    $this->put(route('admin.tour-types.update', $tourType), [
+        'name' => 'Signature Voyages',
+        'description' => 'Curated ocean cruises.',
+        'sort_order' => 3,
+    ])->assertRedirect(route('admin.tour-types.index'));
+
+    $this->assertDatabaseHas('tour_types', [
+        'id' => $tourType->id,
+        'name' => 'Signature Voyages',
+        'is_active' => false,
+    ]);
+
+    $this->delete(route('admin.tour-types.destroy', $tourType))
+        ->assertRedirect(route('admin.tour-types.index'));
+
+    $this->assertDatabaseMissing('tour_types', ['id' => $tourType->id]);
 });
