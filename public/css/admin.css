@@ -35,7 +35,10 @@ a {
     text-decoration: none;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
     margin: 0;
     font-family: var(--font-heading);
     color: var(--admin-sidebar);
@@ -221,6 +224,8 @@ img {
     max-width: 1500px;
     margin: 0 auto;
 }
+
+
 
 /* Buttons */
 .btn {
@@ -470,7 +475,6 @@ img {
 
 .form-control:focus {
     border-color: var(--admin-accent);
-    box-shadow: 0 0 0 3px rgba(28, 168, 203, 0.15);
 }
 
 textarea.form-control {
@@ -729,6 +733,7 @@ textarea.form-control {
 }
 
 @media (max-width: 768px) {
+
     .kpi-grid,
     .form-grid {
         grid-template-columns: 1fr;
