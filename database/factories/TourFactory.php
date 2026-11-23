@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Activity;
 use App\Models\Destination;
 use App\Models\Tour;
 use App\Models\TourCategory;
@@ -26,6 +27,7 @@ class TourFactory extends Factory
             'destination_id' => Destination::factory(),
             'tour_category_id' => TourCategory::factory(),
             'tour_type_id' => TourType::factory(),
+            'activity_id' => Activity::factory(),
             'title' => $title,
             'slug' => Str::slug($title).'-'.fake()->unique()->numberBetween(100, 999),
             'location' => fake()->city().', '.fake()->country(),

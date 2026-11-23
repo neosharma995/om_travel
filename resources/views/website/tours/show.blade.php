@@ -38,6 +38,9 @@
                     @if ($tour->tourType)
                         <span class="tour-badge tour-badge--type">{{ $tour->tourType->name }}</span>
                     @endif
+                    @if ($tour->activity)
+                        <span class="tour-badge tour-badge--type">{{ $tour->activity->name }}</span>
+                    @endif
                     @if ($tour->location)
                         <span class="tour-badge tour-badge--location">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">

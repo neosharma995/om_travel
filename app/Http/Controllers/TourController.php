@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
 use App\Models\Destination;
 use App\Models\Tour;
 use App\Models\TourCategory;
@@ -17,13 +18,14 @@ class TourController extends Controller
         $destinationSlug = $request->string('destination')->trim()->toString();
         $categorySlug = $request->string('category')->trim()->toString();
         $tourTypeSlug = $request->string('tour_type')->trim()->toString();
+        $activitySlug = $request->string('activity')->trim()->toString();
         $duration = $request->string('duration')->trim()->toString();
         $maxPrice = $request->input('max_price');
         $search = $request->string('search')->trim()->toString();
 
         $tours = Tour::query()
             ->active()
-            ->with(['destination', 'category', 'tourType'])
+            ->with(['destination', 'category', 'tourType', 'activity'])
             ->when($destinationSlug !== '', function (Builder $query) use ($destinationSlug): void {
                 $query->whereHas('destination', fn (Builder $sub): Builder => $sub->where('slug', $destinationSlug));
             })
@@ -32,6 +34,9 @@ class TourController extends Controller
             })
             ->when($tourTypeSlug !== '', function (Builder $query) use ($tourTypeSlug): void {
                 $query->whereHas('tourType', fn (Builder $sub): Builder => $sub->where('slug', $tourTypeSlug));
+            })
+            ->when($activitySlug !== '', function (Builder $query) use ($activitySlug): void {
+                $query->whereHas('activity', fn (Builder $sub): Builder => $sub->where('slug', $activitySlug));
             })
             ->when($duration === 'short', fn (Builder $query): Builder => $query->where('duration_days', '<=', 3))
             ->when($duration === 'medium', fn (Builder $query): Builder => $query->whereBetween('duration_days', [4, 6]))
@@ -55,10 +60,12 @@ class TourController extends Controller
             'destinations' => Destination::query()->active()->ordered()->get(),
             'categories' => TourCategory::query()->active()->ordered()->get(),
             'tourTypes' => TourType::query()->active()->ordered()->get(),
+            'activities' => Activity::query()->active()->ordered()->get(),
             'filters' => [
                 'destination' => $destinationSlug,
                 'category' => $categorySlug,
                 'tour_type' => $tourTypeSlug,
+                'activity' => $activitySlug,
                 'duration' => $duration,
                 'max_price' => is_numeric($maxPrice) ? $maxPrice : '',
                 'search' => $search,
@@ -70,7 +77,7 @@ class TourController extends Controller
     {
         abort_unless($tour->is_active, 404);
 
-        $tour->load(['destination', 'category', 'tourType']);
+        $tour->load(['destination', 'category', 'tourType', 'activity']);
 
         $relatedTours = Tour::query()
             ->active()
@@ -78,7 +85,7 @@ class TourController extends Controller
             ->when($tour->destination_id !== null, function (Builder $query) use ($tour): void {
                 $query->orderByRaw('CASE WHEN destination_id = ? THEN 0 ELSE 1 END', [$tour->destination_id]);
             })
-            ->with(['destination', 'category', 'tourType'])
+            ->with(['destination', 'category', 'tourType', 'activity'])
             ->ordered()
             ->limit(3)
             ->get();

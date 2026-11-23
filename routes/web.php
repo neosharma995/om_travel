@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityController as AdminActivityController;
 use App\Http\Controllers\Admin\BlogPostController as AdminBlogPostController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -83,6 +84,7 @@ Route::prefix('admin')
 
         Route::resource('categories', AdminTourCategoryController::class)->except(['show']);
         Route::resource('tour-types', AdminTourTypeController::class)->except(['show']);
+        Route::resource('activities', AdminActivityController::class)->except(['show']);
         Route::resource('destinations', AdminDestinationController::class)->except(['show']);
         Route::resource('tours', AdminTourController::class)->except(['show']);
         Route::resource('gallery', AdminGalleryItemController::class)->except(['show']);

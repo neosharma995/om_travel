@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Activity;
 use App\Models\BlogPost;
 use App\Models\Booking;
 use App\Models\Destination;

@@ -37,7 +37,7 @@ class HomeController extends Controller
         $featuredTours = Tour::query()
             ->active()
             ->featured()
-            ->with(['destination', 'category', 'tourType'])
+            ->with(['destination', 'category', 'tourType', 'activity'])
             ->ordered()
             ->limit(8)
             ->get();

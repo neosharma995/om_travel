@@ -35,6 +35,9 @@
                                     @if ($tour->tourType)
                                         &bull; {{ $tour->tourType->name }}
                                     @endif
+                                    @if ($tour->activity)
+                                        &bull; {{ $tour->activity->name }}
+                                    @endif
                                 </div>
                             </td>
                             <td>{{ $tour->destination?->name ?? '—' }}</td>

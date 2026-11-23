@@ -26,6 +26,7 @@
             || !empty($filters['destination'])
             || !empty($filters['category'])
             || !empty($filters['tour_type'])
+            || !empty($filters['activity'])
             || !empty($filters['duration'])
             || !empty($filters['max_price']);
 
@@ -93,11 +94,11 @@
                                 </div>
                             </div>
 
-                            {{-- Activity / Category --}}
+                            {{-- Category --}}
                             <div class="form-group filter-group">
                                 <label for="filter-category" class="form-label filter-label">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                    <span>Activity</span>
+                                    <span>Category</span>
                                 </label>
                                 <div class="filter-select-wrap">
                                     <select id="filter-category" name="category" class="form-control filter-select">
@@ -122,6 +123,23 @@
                                             <option value="{{ $type->slug }}" @selected($filters['tour_type'] === $type->slug)>{{ $type->name }}</option>
                                         @endforeach
                                     </select>
+                                </div>
+                            </div>
+
+                            {{-- Activity --}}
+                            <div class="form-group filter-group">
+                                <label for="filter-activity" class="form-label filter-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                    <span>Activity</span>
+                                </label>
+                                <div class="filter-select-wrap">
+                                    <select id="filter-activity" name="activity" class="form-control filter-select">
+                                        <option value="">All Activities</option>
+                                        @foreach ($activities as $act)
+                                            <option value="{{ $act->slug }}" @selected($filters['activity'] === $act->slug)>{{ $act->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
                             </div>
 
@@ -219,6 +237,13 @@
                                         <a href="{{ route('tours.index', array_merge(request()->except('tour_type', 'page'))) }}" class="remove-filter-pill" aria-label="Remove tour type filter">&times;</a>
                                     </span>
                                 @endif
+                                @if (!empty($filters['activity']))
+                                    @php $activeAct = $activities->firstWhere('slug', $filters['activity']); @endphp
+                                    <span class="active-filter-pill">
+                                        {{ $activeAct ? $activeAct->name : $filters['activity'] }}
+                                        <a href="{{ route('tours.index', array_merge(request()->except('activity', 'page'))) }}" class="remove-filter-pill" aria-label="Remove activity filter">&times;</a>
+                                    </span>
+                                @endif
                                 @if (!empty($filters['duration']))
                                     @php
                                         $durationLabels = ['short' => '1 - 3 Days', 'medium' => '4 - 6 Days', 'long' => '7+ Days'];
@@ -291,8 +316,15 @@
                                                 <span class="rating-score"><strong>{{ number_format((float) $tour->rating, 1) }}</strong></span>
                                                 <span class="rating-reviews">({{ $tour->reviews_count }} reviews)</span>
                                             </div>
-                                            @if ($tour->category)
-                                                <span class="discovery-category-tag">{{ $tour->category->name }}</span>
+                                            @if ($tour->category || $tour->activity)
+                                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                                    @if ($tour->category)
+                                                        <span class="discovery-category-tag">{{ $tour->category->name }}</span>
+                                                    @endif
+                                                    @if ($tour->activity)
+                                                        <span class="discovery-category-tag">{{ $tour->activity->name }}</span>
+                                                    @endif
+                                                </div>
                                             @endif
                                         </div>
 
