@@ -27,6 +27,7 @@ class HomeController extends Controller
             ->popular()
             ->withCount(['tours' => fn (Builder $query): Builder => $query->active()])
             ->ordered()
+            ->limit(6)
             ->get();
 
         $allDestinations = Destination::query()
@@ -69,6 +70,7 @@ class HomeController extends Controller
 
         return view('website.home', [
             'categories' => $categories,
+            'sliderCategories' => $categories->take(20),
             'popularDestinations' => $popularDestinations,
             'allDestinations' => $allDestinations,
             'featuredTours' => $featuredTours,

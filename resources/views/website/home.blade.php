@@ -201,145 +201,37 @@
 
     <section class="categories-section" id="tourCategories" aria-label="Tour Categories">
         <div class="container">
-            <div class="section-head-split categories-head">
-                <div class="section-head-content">
-                    <span class="section-script">Wonderful Place For You</span>
-                    <h2 class="section-title">Tour Categories</h2>
-                </div>
-                <div class="categories-head-meta">
-                    <div class="categories-count-badge">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                        </svg>
-                        <span>{{ $categories->count() }} Handcrafted Travel Styles</span>
-                    </div>
-                    <p class="categories-head-desc">
-                        From high-altitude Spiti expeditions and alpine treks to tranquil deodar valleys and sacred Himalayan shrines, choose your signature adventure.
-                    </p>
-                </div>
+            <div class="categories-head-center">
+                <span class="section-script">Wonderful Place For You</span>
+                <h2 class="section-title">Tour Categories</h2>
             </div>
 
-            @if ($categories->isNotEmpty())
-                @php
-                    $categoryMeta = [
-                        'trekking' => [
-                            'tag' => 'Alpine & Valley Trails',
-                            'desc' => 'Scenic Himalayan ridges, Kheerganga hot springs & expert-guided mountain trails.',
-                            'badge' => 'Trekking',
-                        ],
-                        'adventure' => [
-                            'tag' => 'Aerial & River Thrills',
-                            'desc' => 'Tandem paragliding over Bir Billing, white-water rafting in Kullu & snow adventures.',
-                            'badge' => 'Adventure',
-                        ],
-                        'spiritual' => [
-                            'tag' => 'Sacred Monasteries',
-                            'desc' => 'Ancient Tibetan Gompas in Spiti, Dalai Lama temple & tranquil wooden pagoda shrines.',
-                            'badge' => 'Spiritual',
-                        ],
-                        'scenic-valleys' => [
-                            'tag' => 'Emerald Valleys',
-                            'desc' => 'Lush meadows of Khajjiar, Sangla apple orchards & pristine Tirthan trout streams.',
-                            'badge' => 'Nature Escapes',
-                        ],
-                        'heritage' => [
-                            'tag' => 'Colonial & Royal Lore',
-                            'desc' => 'Historic Shimla Ridge, UNESCO Kalka toy train & timeless temples of Chamba.',
-                            'badge' => 'Heritage',
-                        ],
-                        'expeditions' => [
-                            'tag' => 'High-Altitude Circuits',
-                            'desc' => 'Rugged Spiti Valley cold desert, Chandratal Lake & dramatic Kunzum Pass routes.',
-                            'badge' => 'Expedition',
-                        ],
-                        'cruises' => [
-                            'tag' => 'Maritime Journeys',
-                            'desc' => 'Luxury ocean voyages, private catamarans & sunset sails across pristine coastal waters.',
-                            'badge' => 'Featured Collection',
-                        ],
-                        'hiking' => [
-                            'tag' => 'Alpine & Trails',
-                            'desc' => 'Scenic glacial ridges, panoramic summits & expert-guided mountain trails.',
-                            'badge' => 'Adventure',
-                        ],
-                        'snorkeling' => [
-                            'tag' => 'Marine & Reefs',
-                            'desc' => 'Vibrant coral reefs, turquoise atolls & unforgettable encounters with sea life.',
-                            'badge' => 'Discovery',
-                        ],
-                        'wildlife' => [
-                            'tag' => 'Nature & Safaris',
-                            'desc' => 'Iconic wildlife reserves, bird habitats & untamed natural encounters.',
-                            'badge' => 'Eco Tour',
-                        ],
-                        'beach' => [
-                            'tag' => 'Coastal Escapes',
-                            'desc' => 'Sun-drenched shores, secluded coves & tranquil oceanfront relaxation.',
-                            'badge' => 'Relaxation',
-                        ],
-                        'island-hopping' => [
-                            'tag' => 'Lagoon Odysseys',
-                            'desc' => 'Emerald waters, secluded archipelagos & bespoke island excursions.',
-                            'badge' => 'Island Life',
-                        ],
-                    ];
-                @endphp
-
-                <div class="editorial-categories-showcase" id="editorialCategories">
-                    @foreach ($categories as $index => $category)
-                        @php
-                            $meta = $categoryMeta[$category->slug] ?? [
-                                'tag' => 'Curated Travel',
-                                'desc' => 'Immerse in unforgettable experiences crafted for discerning travelers.',
-                                'badge' => 'Explore',
-                            ];
-                            $numFormatted = sprintf('%02d', $index + 1);
-                            $toursCount = $category->tours_count ?? null;
-                        @endphp
-
-                        <a href="{{ route('tours.index', ['category' => $category->slug]) }}"
-                           class="btn editorial-category-card"
-                           data-category-slug="{{ $category->slug }}"
-                           aria-label="Explore {{ $category->name }} Tours">
-                            <div class="editorial-card-media">
-                                <img src="{{ $category->imageUrl() }}" alt="{{ $category->name }}" loading="lazy" class="editorial-card-img">
-                                <div class="editorial-card-overlay"></div>
-                            </div>
-
-                            <div class="editorial-card-header">
-                                <span class="editorial-card-index">
-                                    <span class="editorial-card-num">{{ $numFormatted }}</span>
-                                    <span class="editorial-card-sep">/</span>
-                                    <span class="editorial-card-tag">{{ $meta['tag'] }}</span>
-                                </span>
-                                @if (!empty($meta['badge']))
-                                    <span class="editorial-card-badge">{{ $meta['badge'] }}</span>
-                                @endif
-                            </div>
-
-                            <div class="editorial-card-body">
-                                @if ($toursCount !== null && $toursCount > 0)
-                                    <span class="editorial-tours-count">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        {{ $toursCount }} {{ \Illuminate\Support\Str::plural('Tour', $toursCount) }} Available
-                                    </span>
-                                @endif
-
-                                <h3 class="editorial-card-title">{{ $category->name }}</h3>
-
-                                @if (!empty($meta['desc']))
-                                    <p class="editorial-card-desc">{{ $meta['desc'] }}</p>
-                                @endif
-
-                                <div class="editorial-card-action">
-                                    <span class="editorial-action-label">Explore Tours</span>
-                                    <span class="editorial-action-arrow">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                    </span>
+            @if ($sliderCategories->isNotEmpty())
+                <div class="categorySlider th-category-slider" id="categorySlider" data-interval="4000" tabindex="0">
+                    <div class="category-slider-viewport">
+                        <div class="category-slider-track">
+                            @foreach ($sliderCategories as $category)
+                                <div class="category-slide">
+                                    <div class="category-card single">
+                                        <div class="box-img global-img">
+                                            <a href="{{ route('tours.index', ['category' => $category->slug]) }}"
+                                               data-category-slug="{{ $category->slug }}"
+                                               aria-label="Explore {{ $category->name }} Tours">
+                                                <img src="{{ $category->imageUrl() }}" alt="{{ $category->name }}" loading="lazy">
+                                            </a>
+                                        </div>
+                                        <h3 class="box-title title">
+                                            <a href="{{ route('tours.index', ['category' => $category->slug]) }}"
+                                               data-category-slug="{{ $category->slug }}">{{ $category->name }}</a>
+                                        </h3>
+                                        <a class="line-btn" href="{{ route('tours.index', ['category' => $category->slug]) }}">See More</a>
+                                    </div>
                                 </div>
-                            </div>
-                        </a>
-                    @endforeach
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="slider-pagination" id="categorySliderDots" role="tablist" aria-label="Tour categories pagination"></div>
                 </div>
             @endif
         </div>
@@ -365,7 +257,7 @@
                     $featuredSlug = 'manali';
                     $featuredDestination = $popularDestinations->firstWhere('slug', $featuredSlug) ?? $popularDestinations->first();
                     $otherDestinations = $popularDestinations->reject(fn ($d) => $d->id === $featuredDestination?->id);
-                    $orderedDestinations = $featuredDestination ? collect([$featuredDestination])->concat($otherDestinations) : $popularDestinations;
+                    $orderedDestinations = ($featuredDestination ? collect([$featuredDestination])->concat($otherDestinations) : $popularDestinations)->take(6);
 
                     $destMeta = [
                         'manali' => [

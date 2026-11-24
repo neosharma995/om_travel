@@ -13,6 +13,44 @@ use App\Models\TourCategory;
 use App\Models\TourGuide;
 use App\Models\TourType;
 
+test('homepage category slider shows at most twenty categories', function () {
+    foreach (range(1, 22) as $position) {
+        TourCategory::factory()->create([
+            'name' => sprintf('Slider Category %02d', $position),
+            'slug' => sprintf('slider-category-%02d', $position),
+            'sort_order' => $position,
+            'is_active' => true,
+        ]);
+    }
+
+    $response = $this->get(route('home'));
+
+    $response->assertOk()
+        ->assertSee('id="categorySlider"', false)
+        ->assertSee('data-category-slug="slider-category-20"', false)
+        ->assertDontSee('data-category-slug="slider-category-21"', false)
+        ->assertDontSee('data-category-slug="slider-category-22"', false);
+});
+
+test('homepage popular destinations section shows at most six cards', function () {
+    foreach (range(1, 8) as $position) {
+        Destination::factory()->create([
+            'name' => sprintf('Popular Destination %02d', $position),
+            'slug' => sprintf('popular-destination-%02d', $position),
+            'sort_order' => $position,
+            'is_popular' => true,
+            'is_active' => true,
+        ]);
+    }
+
+    $response = $this->get(route('home'));
+
+    $response->assertOk()
+        ->assertSee('data-destination-slug="popular-destination-06"', false)
+        ->assertDontSee('data-destination-slug="popular-destination-07"', false)
+        ->assertDontSee('data-destination-slug="popular-destination-08"', false);
+});
+
 test('homepage renders all travel sections with normal css only', function () {
     SiteSetting::setMany(['hero_title' => 'Natural Wonder of the world']);
     $category = TourCategory::factory()->create(['name' => 'Cruises']);
