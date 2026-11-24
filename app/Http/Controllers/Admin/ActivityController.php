@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ActivityRequest;
 use App\Models\Activity;
+use App\Models\TrashItem;
 use App\Support\MediaUrl;
 use App\Support\SlugGenerator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ActivityController extends Controller
@@ -112,5 +114,52 @@ class ActivityController extends Controller
         return redirect()
             ->route('admin.activities.index')
             ->with('success', 'Activity deleted successfully.');
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        if ($request->isMethod('get')) {
+            return redirect()->route('admin.activities.index');
+        }
+
+        $action = $request->string('action')->trim()->toString();
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Please select at least one activity.');
+        }
+
+        $activities = Activity::query()->whereIn('id', $ids)->get();
+
+        if ($action === 'activate') {
+            Activity::query()->whereIn('id', $ids)->update(['is_active' => true]);
+
+            return back()->with('success', count($activities).' activity(ies) activated.');
+        }
+
+        if ($action === 'deactivate') {
+            Activity::query()->whereIn('id', $ids)->update(['is_active' => false]);
+
+            return back()->with('success', count($activities).' activity(ies) deactivated.');
+        }
+
+        if ($action === 'trash') {
+            foreach ($activities as $activity) {
+                TrashItem::trash($activity);
+            }
+
+            return back()->with('success', count($activities).' activity(ies) moved to trash bin.');
+        }
+
+        if ($action === 'delete') {
+            foreach ($activities as $activity) {
+                MediaUrl::deleteIfStored($activity->image);
+                $activity->delete();
+            }
+
+            return back()->with('success', count($activities).' activity(ies) deleted permanently.');
+        }
+
+        return back()->with('error', 'Invalid action selected.');
     }
 }

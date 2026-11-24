@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TourGuideRequest;
 use App\Models\TourGuide;
+use App\Models\TrashItem;
 use App\Support\MediaUrl;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TourGuideController extends Controller
@@ -113,5 +115,52 @@ class TourGuideController extends Controller
         return redirect()
             ->route('admin.guides.index')
             ->with('success', 'Tour guide deleted successfully.');
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        if ($request->isMethod('get')) {
+            return redirect()->route('admin.guides.index');
+        }
+
+        $action = $request->string('action')->trim()->toString();
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Please select at least one guide.');
+        }
+
+        $guides = TourGuide::query()->whereIn('id', $ids)->get();
+
+        if ($action === 'activate') {
+            TourGuide::query()->whereIn('id', $ids)->update(['is_active' => true]);
+
+            return back()->with('success', count($guides).' tour guide(s) activated.');
+        }
+
+        if ($action === 'deactivate') {
+            TourGuide::query()->whereIn('id', $ids)->update(['is_active' => false]);
+
+            return back()->with('success', count($guides).' tour guide(s) deactivated.');
+        }
+
+        if ($action === 'trash') {
+            foreach ($guides as $guide) {
+                TrashItem::trash($guide);
+            }
+
+            return back()->with('success', count($guides).' tour guide(s) moved to trash bin.');
+        }
+
+        if ($action === 'delete') {
+            foreach ($guides as $guide) {
+                MediaUrl::deleteIfStored($guide->photo);
+                $guide->delete();
+            }
+
+            return back()->with('success', count($guides).' tour guide(s) deleted permanently.');
+        }
+
+        return back()->with('error', 'Invalid action selected.');
     }
 }

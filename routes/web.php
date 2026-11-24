@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\TourCategoryController as AdminTourCategoryContro
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\TourGuideController as AdminTourGuideController;
 use App\Http\Controllers\Admin\TourTypeController as AdminTourTypeController;
+use App\Http\Controllers\Admin\TrashController as AdminTrashController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BookingController;
@@ -81,6 +82,24 @@ Route::prefix('admin')
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
         Route::get('/settings', [SiteSettingController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [SiteSettingController::class, 'update'])->name('settings.update');
+
+        Route::match(['get', 'post'], '/bookings/bulk-action', [AdminBookingController::class, 'bulkAction'])->name('bookings.bulk');
+        Route::match(['get', 'post'], '/inquiries/bulk-action', [AdminInquiryController::class, 'bulkAction'])->name('inquiries.bulk');
+        Route::match(['get', 'post'], '/tours/bulk-action', [AdminTourController::class, 'bulkAction'])->name('tours.bulk');
+        Route::match(['get', 'post'], '/categories/bulk-action', [AdminTourCategoryController::class, 'bulkAction'])->name('categories.bulk');
+        Route::match(['get', 'post'], '/tour-types/bulk-action', [AdminTourTypeController::class, 'bulkAction'])->name('tour-types.bulk');
+        Route::match(['get', 'post'], '/activities/bulk-action', [AdminActivityController::class, 'bulkAction'])->name('activities.bulk');
+        Route::match(['get', 'post'], '/destinations/bulk-action', [AdminDestinationController::class, 'bulkAction'])->name('destinations.bulk');
+        Route::match(['get', 'post'], '/gallery/bulk-action', [AdminGalleryItemController::class, 'bulkAction'])->name('gallery.bulk');
+        Route::match(['get', 'post'], '/guides/bulk-action', [AdminTourGuideController::class, 'bulkAction'])->name('guides.bulk');
+        Route::match(['get', 'post'], '/testimonials/bulk-action', [AdminTestimonialController::class, 'bulkAction'])->name('testimonials.bulk');
+        Route::match(['get', 'post'], '/blog-posts/bulk-action', [AdminBlogPostController::class, 'bulkAction'])->name('blog-posts.bulk');
+
+        Route::get('/trash', [AdminTrashController::class, 'index'])->name('trash.index');
+        Route::post('/trash/{trashItem}/restore', [AdminTrashController::class, 'restore'])->name('trash.restore');
+        Route::delete('/trash/{trashItem}', [AdminTrashController::class, 'destroy'])->name('trash.destroy');
+        Route::match(['get', 'post'], '/trash/bulk-action', [AdminTrashController::class, 'bulkAction'])->name('trash.bulk');
+        Route::post('/trash/empty', [AdminTrashController::class, 'emptyTrash'])->name('trash.empty');
 
         Route::resource('categories', AdminTourCategoryController::class);
         Route::resource('tour-types', AdminTourTypeController::class);

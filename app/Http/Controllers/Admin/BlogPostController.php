@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BlogPostRequest;
 use App\Models\BlogPost;
+use App\Models\TrashItem;
 use App\Support\MediaUrl;
 use App\Support\SlugGenerator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BlogPostController extends Controller
@@ -116,5 +118,52 @@ class BlogPostController extends Controller
         return redirect()
             ->route('admin.blog-posts.index')
             ->with('success', 'Blog article deleted successfully.');
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        if ($request->isMethod('get')) {
+            return redirect()->route('admin.blog-posts.index');
+        }
+
+        $action = $request->string('action')->trim()->toString();
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Please select at least one article.');
+        }
+
+        $posts = BlogPost::query()->whereIn('id', $ids)->get();
+
+        if ($action === 'publish') {
+            BlogPost::query()->whereIn('id', $ids)->update(['is_published' => true]);
+
+            return back()->with('success', count($posts).' article(s) published.');
+        }
+
+        if ($action === 'unpublish') {
+            BlogPost::query()->whereIn('id', $ids)->update(['is_published' => false]);
+
+            return back()->with('success', count($posts).' article(s) unpublished.');
+        }
+
+        if ($action === 'trash') {
+            foreach ($posts as $post) {
+                TrashItem::trash($post);
+            }
+
+            return back()->with('success', count($posts).' article(s) moved to trash bin.');
+        }
+
+        if ($action === 'delete') {
+            foreach ($posts as $post) {
+                MediaUrl::deleteIfStored($post->image);
+                $post->delete();
+            }
+
+            return back()->with('success', count($posts).' article(s) deleted permanently.');
+        }
+
+        return back()->with('error', 'Invalid action selected.');
     }
 }

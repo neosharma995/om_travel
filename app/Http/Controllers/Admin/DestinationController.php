@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\DestinationRequest;
 use App\Models\Destination;
+use App\Models\TrashItem;
 use App\Support\MediaUrl;
 use App\Support\SlugGenerator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DestinationController extends Controller
@@ -122,5 +124,64 @@ class DestinationController extends Controller
         return redirect()
             ->route('admin.destinations.index')
             ->with('success', 'Destination deleted successfully.');
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        if ($request->isMethod('get')) {
+            return redirect()->route('admin.destinations.index');
+        }
+
+        $action = $request->string('action')->trim()->toString();
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Please select at least one destination.');
+        }
+
+        $destinations = Destination::query()->whereIn('id', $ids)->get();
+
+        if ($action === 'activate') {
+            Destination::query()->whereIn('id', $ids)->update(['is_active' => true]);
+
+            return back()->with('success', count($destinations).' destination(s) activated.');
+        }
+
+        if ($action === 'deactivate') {
+            Destination::query()->whereIn('id', $ids)->update(['is_active' => false]);
+
+            return back()->with('success', count($destinations).' destination(s) deactivated.');
+        }
+
+        if ($action === 'popular') {
+            Destination::query()->whereIn('id', $ids)->update(['is_popular' => true]);
+
+            return back()->with('success', count($destinations).' destination(s) marked popular.');
+        }
+
+        if ($action === 'unpopular') {
+            Destination::query()->whereIn('id', $ids)->update(['is_popular' => false]);
+
+            return back()->with('success', count($destinations).' destination(s) marked standard.');
+        }
+
+        if ($action === 'trash') {
+            foreach ($destinations as $destination) {
+                TrashItem::trash($destination);
+            }
+
+            return back()->with('success', count($destinations).' destination(s) moved to trash bin.');
+        }
+
+        if ($action === 'delete') {
+            foreach ($destinations as $destination) {
+                MediaUrl::deleteIfStored($destination->image);
+                $destination->delete();
+            }
+
+            return back()->with('success', count($destinations).' destination(s) deleted permanently.');
+        }
+
+        return back()->with('error', 'Invalid action selected.');
     }
 }

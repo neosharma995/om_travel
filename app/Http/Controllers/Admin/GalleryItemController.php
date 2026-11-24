@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\GalleryItemRequest;
 use App\Models\GalleryItem;
+use App\Models\TrashItem;
 use App\Support\MediaUrl;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class GalleryItemController extends Controller
@@ -99,5 +101,52 @@ class GalleryItemController extends Controller
         return redirect()
             ->route('admin.gallery.index')
             ->with('success', 'Gallery item deleted successfully.');
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        if ($request->isMethod('get')) {
+            return redirect()->route('admin.gallery.index');
+        }
+
+        $action = $request->string('action')->trim()->toString();
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Please select at least one gallery item.');
+        }
+
+        $items = GalleryItem::query()->whereIn('id', $ids)->get();
+
+        if ($action === 'activate') {
+            GalleryItem::query()->whereIn('id', $ids)->update(['is_active' => true]);
+
+            return back()->with('success', count($items).' gallery item(s) activated.');
+        }
+
+        if ($action === 'deactivate') {
+            GalleryItem::query()->whereIn('id', $ids)->update(['is_active' => false]);
+
+            return back()->with('success', count($items).' gallery item(s) deactivated.');
+        }
+
+        if ($action === 'trash') {
+            foreach ($items as $item) {
+                TrashItem::trash($item);
+            }
+
+            return back()->with('success', count($items).' gallery item(s) moved to trash bin.');
+        }
+
+        if ($action === 'delete') {
+            foreach ($items as $item) {
+                MediaUrl::deleteIfStored($item->image);
+                $item->delete();
+            }
+
+            return back()->with('success', count($items).' gallery item(s) deleted permanently.');
+        }
+
+        return back()->with('error', 'Invalid action selected.');
     }
 }

@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TestimonialRequest;
 use App\Models\Testimonial;
+use App\Models\TrashItem;
 use App\Support\MediaUrl;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TestimonialController extends Controller
@@ -111,5 +113,64 @@ class TestimonialController extends Controller
         return redirect()
             ->route('admin.testimonials.index')
             ->with('success', 'Testimonial deleted successfully.');
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        if ($request->isMethod('get')) {
+            return redirect()->route('admin.testimonials.index');
+        }
+
+        $action = $request->string('action')->trim()->toString();
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Please select at least one testimonial.');
+        }
+
+        $testimonials = Testimonial::query()->whereIn('id', $ids)->get();
+
+        if ($action === 'activate') {
+            Testimonial::query()->whereIn('id', $ids)->update(['is_active' => true]);
+
+            return back()->with('success', count($testimonials).' testimonial(s) activated.');
+        }
+
+        if ($action === 'deactivate') {
+            Testimonial::query()->whereIn('id', $ids)->update(['is_active' => false]);
+
+            return back()->with('success', count($testimonials).' testimonial(s) deactivated.');
+        }
+
+        if ($action === 'feature') {
+            Testimonial::query()->whereIn('id', $ids)->update(['is_featured' => true]);
+
+            return back()->with('success', count($testimonials).' testimonial(s) marked featured.');
+        }
+
+        if ($action === 'unfeature') {
+            Testimonial::query()->whereIn('id', $ids)->update(['is_featured' => false]);
+
+            return back()->with('success', count($testimonials).' testimonial(s) unfeatured.');
+        }
+
+        if ($action === 'trash') {
+            foreach ($testimonials as $testimonial) {
+                TrashItem::trash($testimonial);
+            }
+
+            return back()->with('success', count($testimonials).' testimonial(s) moved to trash bin.');
+        }
+
+        if ($action === 'delete') {
+            foreach ($testimonials as $testimonial) {
+                MediaUrl::deleteIfStored($testimonial->avatar);
+                $testimonial->delete();
+            }
+
+            return back()->with('success', count($testimonials).' testimonial(s) deleted permanently.');
+        }
+
+        return back()->with('error', 'Invalid action selected.');
     }
 }

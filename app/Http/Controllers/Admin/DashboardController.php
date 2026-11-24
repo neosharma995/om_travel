@@ -14,11 +14,13 @@ use App\Models\Tour;
 use App\Models\TourCategory;
 use App\Models\TourGuide;
 use App\Models\TourType;
+use App\Models\TrashItem;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $stats = [
             'toursCount' => Tour::query()->count(),
@@ -34,23 +36,37 @@ class DashboardController extends Controller
             'pendingBookingsCount' => Booking::query()->where('status', 'pending')->count(),
             'inquiriesCount' => Inquiry::query()->count(),
             'newInquiriesCount' => Inquiry::query()->where('status', 'new')->count(),
+            'trashedCount' => TrashItem::query()->count(),
         ];
 
-        $recentBookings = Booking::query()
-            ->with('tour')
-            ->latest()
-            ->limit(5)
-            ->get();
+        $bookingStatus = $request->string('booking_status')->trim()->toString();
+        $inquiryStatus = $request->string('inquiry_status')->trim()->toString();
 
-        $recentInquiries = Inquiry::query()
+        $bookings = Booking::query()
+            ->with('tour')
+            ->when($bookingStatus !== '', fn ($q) => $q->where('status', $bookingStatus))
             ->latest()
-            ->limit(5)
-            ->get();
+            ->paginate(5, ['*'], 'bookings_page')
+            ->withQueryString();
+
+        $inquiries = Inquiry::query()
+            ->when($inquiryStatus !== '', fn ($q) => $q->where('status', $inquiryStatus))
+            ->latest()
+            ->paginate(5, ['*'], 'inquiries_page')
+            ->withQueryString();
+
+        $recentTrash = TrashItem::query()
+            ->latest()
+            ->paginate(5, ['*'], 'trash_page')
+            ->withQueryString();
 
         return view('admin.dashboard', [
             'stats' => $stats,
-            'recentBookings' => $recentBookings,
-            'recentInquiries' => $recentInquiries,
+            'recentBookings' => $bookings,
+            'recentInquiries' => $inquiries,
+            'recentTrash' => $recentTrash,
+            'bookingStatus' => $bookingStatus,
+            'inquiryStatus' => $inquiryStatus,
         ]);
     }
 }

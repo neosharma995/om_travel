@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TourCategoryRequest;
 use App\Models\TourCategory;
+use App\Models\TrashItem;
 use App\Support\MediaUrl;
 use App\Support\SlugGenerator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TourCategoryController extends Controller
@@ -122,5 +124,52 @@ class TourCategoryController extends Controller
         return redirect()
             ->route('admin.categories.index')
             ->with('success', 'Tour category deleted successfully.');
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        if ($request->isMethod('get')) {
+            return redirect()->route('admin.categories.index');
+        }
+
+        $action = $request->string('action')->trim()->toString();
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Please select at least one category.');
+        }
+
+        $categories = TourCategory::query()->whereIn('id', $ids)->get();
+
+        if ($action === 'activate') {
+            TourCategory::query()->whereIn('id', $ids)->update(['is_active' => true]);
+
+            return back()->with('success', count($categories).' category(ies) activated.');
+        }
+
+        if ($action === 'deactivate') {
+            TourCategory::query()->whereIn('id', $ids)->update(['is_active' => false]);
+
+            return back()->with('success', count($categories).' category(ies) deactivated.');
+        }
+
+        if ($action === 'trash') {
+            foreach ($categories as $category) {
+                TrashItem::trash($category);
+            }
+
+            return back()->with('success', count($categories).' category(ies) moved to trash bin.');
+        }
+
+        if ($action === 'delete') {
+            foreach ($categories as $category) {
+                MediaUrl::deleteIfStored($category->image);
+                $category->delete();
+            }
+
+            return back()->with('success', count($categories).' category(ies) deleted permanently.');
+        }
+
+        return back()->with('error', 'Invalid action selected.');
     }
 }

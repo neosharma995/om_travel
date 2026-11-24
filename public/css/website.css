@@ -5378,7 +5378,7 @@ aside.tours-filter-sidebar,
     margin-bottom: 36px;
 }
 
-.filter-form {
+.filter-form:not(.tours-filter-form) {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr)) auto;
     gap: 14px;
@@ -6332,7 +6332,7 @@ a.pagination-btn:hover {
         text-align: left;
     }
 
-    .filter-form {
+    .filter-form:not(.tours-filter-form) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -6462,7 +6462,7 @@ a.pagination-btn:hover {
     .tours-grid-3,
     .blog-grid,
     .footer-grid,
-    .filter-form,
+    .filter-form:not(.tours-filter-form),
     .form-row-2,
     .highlights-list {
         grid-template-columns: 1fr;

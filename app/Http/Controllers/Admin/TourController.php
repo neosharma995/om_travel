@@ -9,9 +9,11 @@ use App\Models\Destination;
 use App\Models\Tour;
 use App\Models\TourCategory;
 use App\Models\TourType;
+use App\Models\TrashItem;
 use App\Support\MediaUrl;
 use App\Support\SlugGenerator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TourController extends Controller
@@ -151,5 +153,64 @@ class TourController extends Controller
         return redirect()
             ->route('admin.tours.index')
             ->with('success', 'Tour package deleted successfully.');
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        if ($request->isMethod('get')) {
+            return redirect()->route('admin.tours.index');
+        }
+
+        $action = $request->string('action')->trim()->toString();
+        $ids = array_filter((array) $request->input('ids', []));
+
+        if (empty($ids)) {
+            return back()->with('error', 'Please select at least one tour package.');
+        }
+
+        $tours = Tour::query()->whereIn('id', $ids)->get();
+
+        if ($action === 'activate') {
+            Tour::query()->whereIn('id', $ids)->update(['is_active' => true]);
+
+            return back()->with('success', count($tours).' tour(s) activated.');
+        }
+
+        if ($action === 'deactivate') {
+            Tour::query()->whereIn('id', $ids)->update(['is_active' => false]);
+
+            return back()->with('success', count($tours).' tour(s) deactivated.');
+        }
+
+        if ($action === 'feature') {
+            Tour::query()->whereIn('id', $ids)->update(['is_featured' => true]);
+
+            return back()->with('success', count($tours).' tour(s) marked as featured.');
+        }
+
+        if ($action === 'unfeature') {
+            Tour::query()->whereIn('id', $ids)->update(['is_featured' => false]);
+
+            return back()->with('success', count($tours).' tour(s) unfeatured.');
+        }
+
+        if ($action === 'trash') {
+            foreach ($tours as $tour) {
+                TrashItem::trash($tour);
+            }
+
+            return back()->with('success', count($tours).' tour(s) moved to trash bin.');
+        }
+
+        if ($action === 'delete') {
+            foreach ($tours as $tour) {
+                MediaUrl::deleteIfStored($tour->image);
+                $tour->delete();
+            }
+
+            return back()->with('success', count($tours).' tour(s) permanently deleted.');
+        }
+
+        return back()->with('error', 'Invalid action selected.');
     }
 }
