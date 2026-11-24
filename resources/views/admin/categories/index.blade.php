@@ -16,6 +16,7 @@
                     <tr>
                         <th>Image</th>
                         <th>Name</th>
+                        <th>Parent Category</th>
                         <th>Tours</th>
                         <th>Order</th>
                         <th>Status</th>
@@ -30,6 +31,13 @@
                                 <strong>{{ $category->name }}</strong>
                                 <div style="font-size: 12px; color: var(--admin-muted);">{{ $category->slug }}</div>
                             </td>
+                            <td>
+                                @if ($category->parent)
+                                    <span class="badge badge-neutral">{{ $category->parent->name }}</span>
+                                @else
+                                    <span style="color: var(--admin-muted);">Top Level</span>
+                                @endif
+                            </td>
                             <td>{{ $category->tours_count }}</td>
                             <td>{{ $category->sort_order }}</td>
                             <td>
@@ -39,6 +47,7 @@
                             </td>
                             <td>
                                 <div class="table-actions">
+                                    <a href="{{ route('admin.categories.show', $category) }}" class="btn btn-view btn-sm">View</a>
                                     <a href="{{ route('admin.categories.edit', $category) }}" class="btn btn-outline btn-sm">Edit</a>
                                     <form action="{{ route('admin.categories.destroy', $category) }}" method="POST" onsubmit="return confirm('Delete this category?')">
                                         @csrf
@@ -49,7 +58,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6">No categories found.</td></tr>
+                        <tr><td colspan="7">No categories found.</td></tr>
                     @endforelse
                 </tbody>
             </table>

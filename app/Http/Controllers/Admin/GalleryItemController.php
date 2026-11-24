@@ -15,7 +15,7 @@ class GalleryItemController extends Controller
     {
         $items = GalleryItem::query()
             ->ordered()
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.gallery.index', [
             'items' => $items,
@@ -51,6 +51,13 @@ class GalleryItemController extends Controller
         return redirect()
             ->route('admin.gallery.index')
             ->with('success', 'Gallery item added successfully.');
+    }
+
+    public function show(GalleryItem $gallery): View
+    {
+        return view('admin.gallery.show', [
+            'item' => $gallery,
+        ]);
     }
 
     public function edit(GalleryItem $gallery): View

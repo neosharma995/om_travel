@@ -15,7 +15,7 @@ class TestimonialController extends Controller
     {
         $testimonials = Testimonial::query()
             ->ordered()
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.testimonials.index', [
             'testimonials' => $testimonials,
@@ -60,6 +60,13 @@ class TestimonialController extends Controller
         return redirect()
             ->route('admin.testimonials.index')
             ->with('success', 'Testimonial created successfully.');
+    }
+
+    public function show(Testimonial $testimonial): View
+    {
+        return view('admin.testimonials.show', [
+            'testimonial' => $testimonial,
+        ]);
     }
 
     public function edit(Testimonial $testimonial): View

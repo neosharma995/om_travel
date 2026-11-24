@@ -16,7 +16,7 @@ class TourTypeController extends Controller
         $tourTypes = TourType::query()
             ->withCount('tours')
             ->ordered()
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.tour-types.index', [
             'tourTypes' => $tourTypes,
@@ -45,6 +45,22 @@ class TourTypeController extends Controller
         return redirect()
             ->route('admin.tour-types.index')
             ->with('success', 'Tour type created successfully.');
+    }
+
+    public function show(TourType $tourType): View
+    {
+        $tourType->loadCount('tours');
+
+        $tours = $tourType->tours()
+            ->with(['destination', 'category'])
+            ->ordered()
+            ->limit(10)
+            ->get();
+
+        return view('admin.tour-types.show', [
+            'tourType' => $tourType,
+            'tours' => $tours,
+        ]);
     }
 
     public function edit(TourType $tourType): View

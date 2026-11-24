@@ -82,15 +82,15 @@ Route::prefix('admin')
         Route::get('/settings', [SiteSettingController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [SiteSettingController::class, 'update'])->name('settings.update');
 
-        Route::resource('categories', AdminTourCategoryController::class)->except(['show']);
-        Route::resource('tour-types', AdminTourTypeController::class)->except(['show']);
-        Route::resource('activities', AdminActivityController::class)->except(['show']);
-        Route::resource('destinations', AdminDestinationController::class)->except(['show']);
-        Route::resource('tours', AdminTourController::class)->except(['show']);
-        Route::resource('gallery', AdminGalleryItemController::class)->except(['show']);
-        Route::resource('guides', AdminTourGuideController::class)->except(['show']);
-        Route::resource('testimonials', AdminTestimonialController::class)->except(['show']);
-        Route::resource('blog-posts', AdminBlogPostController::class)->except(['show']);
+        Route::resource('categories', AdminTourCategoryController::class);
+        Route::resource('tour-types', AdminTourTypeController::class);
+        Route::resource('activities', AdminActivityController::class);
+        Route::resource('destinations', AdminDestinationController::class);
+        Route::resource('tours', AdminTourController::class);
+        Route::resource('gallery', AdminGalleryItemController::class);
+        Route::resource('guides', AdminTourGuideController::class);
+        Route::resource('testimonials', AdminTestimonialController::class);
+        Route::resource('blog-posts', AdminBlogPostController::class);
         Route::resource('bookings', AdminBookingController::class)->only(['index', 'show', 'update', 'destroy']);
         Route::resource('inquiries', AdminInquiryController::class)->only(['index', 'show', 'update', 'destroy']);
     });

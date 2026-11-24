@@ -104,7 +104,7 @@
                                     <select id="filter-category" name="category" class="form-control filter-select">
                                         <option value="">All Categories</option>
                                         @foreach ($categories as $cat)
-                                            <option value="{{ $cat->slug }}" @selected($filters['category'] === $cat->slug)>{{ $cat->name }}</option>
+                                            <option value="{{ $cat->slug }}" @selected($filters['category'] === $cat->slug)>{{ $cat->displayNameWithParent() }}</option>
                                         @endforeach
                                     </select>
                                 </div>

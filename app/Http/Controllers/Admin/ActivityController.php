@@ -17,7 +17,7 @@ class ActivityController extends Controller
         $activities = Activity::query()
             ->withCount('tours')
             ->ordered()
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.activities.index', [
             'activities' => $activities,
@@ -54,6 +54,22 @@ class ActivityController extends Controller
         return redirect()
             ->route('admin.activities.index')
             ->with('success', 'Activity created successfully.');
+    }
+
+    public function show(Activity $activity): View
+    {
+        $activity->loadCount('tours');
+
+        $tours = $activity->tours()
+            ->with(['destination', 'category'])
+            ->ordered()
+            ->limit(10)
+            ->get();
+
+        return view('admin.activities.show', [
+            'activity' => $activity,
+            'tours' => $tours,
+        ]);
     }
 
     public function edit(Activity $activity): View

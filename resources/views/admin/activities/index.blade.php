@@ -41,6 +41,7 @@
                             </td>
                             <td>
                                 <div class="table-actions">
+                                    <a href="{{ route('admin.activities.show', $activity) }}" class="btn btn-view btn-sm">View</a>
                                     <a href="{{ route('admin.activities.edit', $activity) }}" class="btn btn-outline btn-sm">Edit</a>
                                     <form action="{{ route('admin.activities.destroy', $activity) }}" method="POST" onsubmit="return confirm('Delete this activity?')">
                                         @csrf

@@ -39,6 +39,7 @@
                             </td>
                             <td>
                                 <div class="table-actions">
+                                    <a href="{{ route('admin.tour-types.show', $tourType) }}" class="btn btn-view btn-sm">View</a>
                                     <a href="{{ route('admin.tour-types.edit', $tourType) }}" class="btn btn-outline btn-sm">Edit</a>
                                     <form action="{{ route('admin.tour-types.destroy', $tourType) }}" method="POST" onsubmit="return confirm('Delete this tour type?')">
                                         @csrf

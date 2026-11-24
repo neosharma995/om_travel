@@ -43,6 +43,7 @@
                             </td>
                             <td>
                                 <div class="table-actions">
+                                    <a href="{{ route('admin.destinations.show', $destination) }}" class="btn btn-view btn-sm">View</a>
                                     <a href="{{ route('admin.destinations.edit', $destination) }}" class="btn btn-outline btn-sm">Edit</a>
                                     <form action="{{ route('admin.destinations.destroy', $destination) }}" method="POST" onsubmit="return confirm('Delete this destination?')">
                                         @csrf

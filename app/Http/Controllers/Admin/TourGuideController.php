@@ -15,7 +15,7 @@ class TourGuideController extends Controller
     {
         $guides = TourGuide::query()
             ->ordered()
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.guides.index', [
             'guides' => $guides,
@@ -60,6 +60,13 @@ class TourGuideController extends Controller
         return redirect()
             ->route('admin.guides.index')
             ->with('success', 'Tour guide created successfully.');
+    }
+
+    public function show(TourGuide $guide): View
+    {
+        return view('admin.guides.show', [
+            'guide' => $guide,
+        ]);
     }
 
     public function edit(TourGuide $guide): View

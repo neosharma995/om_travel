@@ -21,7 +21,7 @@ class TourController extends Controller
         $tours = Tour::query()
             ->with(['destination', 'category', 'tourType', 'activity'])
             ->ordered()
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.tours.index', [
             'tours' => $tours,
@@ -40,7 +40,7 @@ class TourController extends Controller
                 'sort_order' => 0,
             ]),
             'destinations' => Destination::query()->ordered()->get(),
-            'categories' => TourCategory::query()->ordered()->get(),
+            'categories' => TourCategory::query()->with('parent')->ordered()->get(),
             'tourTypes' => TourType::query()->ordered()->get(),
             'activities' => Activity::query()->ordered()->get(),
         ]);
@@ -84,12 +84,22 @@ class TourController extends Controller
             ->with('success', 'Tour package created successfully.');
     }
 
+    public function show(Tour $tour): View
+    {
+        $tour->load(['destination', 'category.parent', 'tourType', 'activity'])
+            ->loadCount('bookings');
+
+        return view('admin.tours.show', [
+            'tour' => $tour,
+        ]);
+    }
+
     public function edit(Tour $tour): View
     {
         return view('admin.tours.edit', [
             'tour' => $tour,
             'destinations' => Destination::query()->ordered()->get(),
-            'categories' => TourCategory::query()->ordered()->get(),
+            'categories' => TourCategory::query()->with('parent')->ordered()->get(),
             'tourTypes' => TourType::query()->ordered()->get(),
             'activities' => Activity::query()->ordered()->get(),
         ]);

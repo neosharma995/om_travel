@@ -15,9 +15,10 @@ class TourCategoryController extends Controller
     public function index(): View
     {
         $categories = TourCategory::query()
+            ->with('parent')
             ->withCount('tours')
             ->ordered()
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.categories.index', [
             'categories' => $categories,
@@ -28,6 +29,7 @@ class TourCategoryController extends Controller
     {
         return view('admin.categories.create', [
             'category' => new TourCategory(['is_active' => true, 'sort_order' => 0]),
+            'parentCategories' => TourCategory::query()->with('parent')->ordered()->get(),
         ]);
     }
 
@@ -43,6 +45,7 @@ class TourCategoryController extends Controller
         );
 
         TourCategory::query()->create([
+            'parent_id' => ($validated['parent_id'] ?? null) ?: null,
             'name' => $validated['name'],
             'slug' => SlugGenerator::unique('tour_categories', $validated['slug'] ?? $validated['name']),
             'image' => $imagePath,
@@ -55,10 +58,34 @@ class TourCategoryController extends Controller
             ->with('success', 'Tour category created successfully.');
     }
 
+    public function show(TourCategory $category): View
+    {
+        $category->load(['parent', 'children'])
+            ->loadCount('tours');
+
+        $tours = $category->tours()
+            ->with(['destination', 'tourType'])
+            ->ordered()
+            ->limit(10)
+            ->get();
+
+        return view('admin.categories.show', [
+            'category' => $category,
+            'tours' => $tours,
+        ]);
+    }
+
     public function edit(TourCategory $category): View
     {
+        $excludedIds = array_merge([$category->id], $category->descendantIds());
+
         return view('admin.categories.edit', [
             'category' => $category,
+            'parentCategories' => TourCategory::query()
+                ->with('parent')
+                ->whereNotIn('id', $excludedIds)
+                ->ordered()
+                ->get(),
         ]);
     }
 
@@ -74,6 +101,7 @@ class TourCategoryController extends Controller
         );
 
         $category->update([
+            'parent_id' => ($validated['parent_id'] ?? null) ?: null,
             'name' => $validated['name'],
             'slug' => SlugGenerator::unique('tour_categories', $validated['slug'] ?? $validated['name'], $category->id),
             'image' => $imagePath,

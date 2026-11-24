@@ -17,7 +17,7 @@ class DestinationController extends Controller
         $destinations = Destination::query()
             ->withCount('tours')
             ->ordered()
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.destinations.index', [
             'destinations' => $destinations,
@@ -61,6 +61,22 @@ class DestinationController extends Controller
         return redirect()
             ->route('admin.destinations.index')
             ->with('success', 'Destination created successfully.');
+    }
+
+    public function show(Destination $destination): View
+    {
+        $destination->loadCount('tours');
+
+        $tours = $destination->tours()
+            ->with(['category', 'tourType', 'activity'])
+            ->ordered()
+            ->limit(10)
+            ->get();
+
+        return view('admin.destinations.show', [
+            'destination' => $destination,
+            'tours' => $tours,
+        ]);
     }
 
     public function edit(Destination $destination): View

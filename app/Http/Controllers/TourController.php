@@ -30,7 +30,15 @@ class TourController extends Controller
                 $query->whereHas('destination', fn (Builder $sub): Builder => $sub->where('slug', $destinationSlug));
             })
             ->when($categorySlug !== '', function (Builder $query) use ($categorySlug): void {
-                $query->whereHas('category', fn (Builder $sub): Builder => $sub->where('slug', $categorySlug));
+                $selectedCategory = TourCategory::query()->where('slug', $categorySlug)->first();
+                if ($selectedCategory === null) {
+                    $query->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $categoryIds = array_merge([$selectedCategory->id], $selectedCategory->descendantIds());
+                $query->whereIn('tour_category_id', $categoryIds);
             })
             ->when($tourTypeSlug !== '', function (Builder $query) use ($tourTypeSlug): void {
                 $query->whereHas('tourType', fn (Builder $sub): Builder => $sub->where('slug', $tourTypeSlug));
@@ -58,7 +66,7 @@ class TourController extends Controller
         return view('website.tours.index', [
             'tours' => $tours,
             'destinations' => Destination::query()->active()->ordered()->get(),
-            'categories' => TourCategory::query()->active()->ordered()->get(),
+            'categories' => TourCategory::query()->active()->with('parent')->ordered()->get(),
             'tourTypes' => TourType::query()->active()->ordered()->get(),
             'activities' => Activity::query()->active()->ordered()->get(),
             'filters' => [

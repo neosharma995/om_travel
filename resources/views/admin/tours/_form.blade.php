@@ -26,7 +26,7 @@
         <select id="tour_category_id" name="tour_category_id" class="form-control">
             <option value="">None</option>
             @foreach ($categories as $cat)
-                <option value="{{ $cat->id }}" @selected((string) old('tour_category_id', $tour->tour_category_id) === (string) $cat->id)>{{ $cat->name }}</option>
+                <option value="{{ $cat->id }}" @selected((string) old('tour_category_id', $tour->tour_category_id) === (string) $cat->id)>{{ $cat->displayNameWithParent() }}</option>
             @endforeach
         </select>
     </div>

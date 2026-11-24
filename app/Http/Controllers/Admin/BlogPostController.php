@@ -17,7 +17,7 @@ class BlogPostController extends Controller
         $posts = BlogPost::query()
             ->latest('published_at')
             ->latest('id')
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.blog-posts.index', [
             'posts' => $posts,
@@ -63,6 +63,13 @@ class BlogPostController extends Controller
         return redirect()
             ->route('admin.blog-posts.index')
             ->with('success', 'Blog article created successfully.');
+    }
+
+    public function show(BlogPost $blogPost): View
+    {
+        return view('admin.blog-posts.show', [
+            'post' => $blogPost,
+        ]);
     }
 
     public function edit(BlogPost $blogPost): View

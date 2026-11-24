@@ -36,6 +36,7 @@
                             </td>
                             <td>
                                 <div class="table-actions">
+                                    <a href="{{ route('admin.gallery.show', $item) }}" class="btn btn-view btn-sm">View</a>
                                     <a href="{{ route('admin.gallery.edit', $item) }}" class="btn btn-outline btn-sm">Edit</a>
                                     <form action="{{ route('admin.gallery.destroy', $item) }}" method="POST" onsubmit="return confirm('Delete this gallery item?')">
                                         @csrf

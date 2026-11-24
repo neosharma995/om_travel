@@ -374,3 +374,144 @@ test('admin can manage activities with image upload and assign them to tour pack
 
     $this->assertDatabaseMissing('activities', ['id' => $activity->id]);
 });
+
+test('admin tables paginate at 10 items per page', function () {
+    $destination = Destination::factory()->create();
+    $category = TourCategory::factory()->create(['sort_order' => 999]);
+    $tourType = TourType::factory()->create();
+    $activity = Activity::factory()->create();
+
+    foreach (range(1, 12) as $index) {
+        Tour::factory()->create([
+            'destination_id' => $destination->id,
+            'tour_category_id' => $category->id,
+            'tour_type_id' => $tourType->id,
+            'activity_id' => $activity->id,
+            'title' => sprintf('Paginated Tour %02d', $index),
+            'sort_order' => $index,
+        ]);
+    }
+
+    foreach (range(1, 11) as $index) {
+        TourCategory::factory()->create([
+            'name' => sprintf('Paginated Category %02d', $index),
+            'sort_order' => $index,
+        ]);
+    }
+
+    $this->get(route('admin.tours.index'))
+        ->assertOk()
+        ->assertSee('Paginated Tour 01')
+        ->assertSee('Paginated Tour 10')
+        ->assertDontSee('Paginated Tour 11')
+        ->assertSee('?page=2', false);
+
+    $this->get(route('admin.tours.index', ['page' => 2]))
+        ->assertOk()
+        ->assertSee('Paginated Tour 11')
+        ->assertSee('Paginated Tour 12')
+        ->assertDontSee('Paginated Tour 01');
+
+    $this->get(route('admin.categories.index'))
+        ->assertOk()
+        ->assertSee('Paginated Category 10')
+        ->assertDontSee('Paginated Category 11')
+        ->assertSee('?page=2', false);
+});
+
+test('admin can assign parent category, prevents circular parenting, and nullifies child parent on delete', function () {
+    $parent = TourCategory::factory()->create([
+        'name' => 'Water Sports',
+        'slug' => 'water-sports',
+    ]);
+
+    $this->post(route('admin.categories.store'), [
+        'name' => 'Scuba Diving',
+        'parent_id' => $parent->id,
+        'sort_order' => 1,
+        'is_active' => '1',
+    ])->assertRedirect(route('admin.categories.index'));
+
+    $child = TourCategory::query()->where('name', 'Scuba Diving')->firstOrFail();
+    expect($child->parent_id)->toBe($parent->id);
+
+    $this->get(route('admin.categories.index'))
+        ->assertOk()
+        ->assertSee('Water Sports');
+
+    $this->get(route('admin.categories.edit', $parent))
+        ->assertOk()
+        ->assertDontSee('<option value="'.$parent->id.'"', false)
+        ->assertDontSee('<option value="'.$child->id.'"', false);
+
+    $this->from(route('admin.categories.edit', $parent))
+        ->put(route('admin.categories.update', $parent), [
+            'name' => $parent->name,
+            'parent_id' => $parent->id,
+            'is_active' => '1',
+        ])
+        ->assertRedirect(route('admin.categories.edit', $parent))
+        ->assertSessionHasErrors('parent_id');
+
+    $this->from(route('admin.categories.edit', $parent))
+        ->put(route('admin.categories.update', $parent), [
+            'name' => $parent->name,
+            'parent_id' => $child->id,
+            'is_active' => '1',
+        ])
+        ->assertRedirect(route('admin.categories.edit', $parent))
+        ->assertSessionHasErrors('parent_id');
+
+    $this->delete(route('admin.categories.destroy', $parent))
+        ->assertRedirect(route('admin.categories.index'));
+
+    $this->assertDatabaseHas('tour_categories', [
+        'id' => $child->id,
+        'parent_id' => null,
+    ]);
+});
+
+test('admin index tables link to internal admin show pages and render full details', function () {
+    $parentCategory = TourCategory::factory()->create(['name' => 'Marine Tours', 'slug' => 'marine-tours']);
+    $category = TourCategory::factory()->create(['name' => 'Coastal Sailing', 'slug' => 'coastal-sailing', 'parent_id' => $parentCategory->id]);
+    $tourType = TourType::factory()->create(['name' => 'Luxury Escape', 'slug' => 'luxury-escape']);
+    $activity = Activity::factory()->create(['name' => 'Reef Diving', 'slug' => 'reef-diving']);
+    $destination = Destination::factory()->create(['name' => 'Inactive Island', 'slug' => 'inactive-island', 'is_active' => false]);
+    $tour = Tour::factory()->create([
+        'destination_id' => $destination->id,
+        'tour_category_id' => $category->id,
+        'tour_type_id' => $tourType->id,
+        'activity_id' => $activity->id,
+        'title' => 'Hidden Expedition',
+        'slug' => 'hidden-expedition',
+        'is_active' => false,
+    ]);
+    $galleryItem = GalleryItem::factory()->create(['title' => 'Coral Lagoon Shot']);
+    $guide = TourGuide::factory()->create(['name' => 'Marcus Reed']);
+    $testimonial = Testimonial::factory()->create(['client_name' => 'Sophia Hayes', 'quote' => 'Incredible service throughout!']);
+    $post = BlogPost::factory()->create(['title' => 'Draft Travel Story', 'slug' => 'draft-story', 'is_published' => false]);
+
+    $this->get(route('admin.tours.index'))->assertOk()->assertSee(route('admin.tours.show', $tour));
+    $this->get(route('admin.destinations.index'))->assertOk()->assertSee(route('admin.destinations.show', $destination));
+    $this->get(route('admin.categories.index'))->assertOk()->assertSee(route('admin.categories.show', $category));
+    $this->get(route('admin.tour-types.index'))->assertOk()->assertSee(route('admin.tour-types.show', $tourType));
+    $this->get(route('admin.activities.index'))->assertOk()->assertSee(route('admin.activities.show', $activity));
+    $this->get(route('admin.gallery.index'))->assertOk()->assertSee(route('admin.gallery.show', $galleryItem));
+    $this->get(route('admin.guides.index'))->assertOk()->assertSee(route('admin.guides.show', $guide));
+    $this->get(route('admin.testimonials.index'))->assertOk()->assertSee(route('admin.testimonials.show', $testimonial));
+    $this->get(route('admin.blog-posts.index'))->assertOk()->assertSee(route('admin.blog-posts.show', $post));
+
+    $this->get(route('admin.tours.show', $tour))->assertOk()->assertSee('Hidden Expedition')->assertSee('Marine Tours');
+    $this->get(route('admin.destinations.show', $destination))->assertOk()->assertSee('Inactive Island');
+    $this->get(route('admin.categories.show', $category))->assertOk()->assertSee('Coastal Sailing')->assertSee('Marine Tours');
+    $this->get(route('admin.tour-types.show', $tourType))->assertOk()->assertSee('Luxury Escape');
+    $this->get(route('admin.activities.show', $activity))->assertOk()->assertSee('Reef Diving');
+    $this->get(route('admin.gallery.show', $galleryItem))->assertOk()->assertSee('Coral Lagoon Shot');
+    $this->get(route('admin.guides.show', $guide))->assertOk()->assertSee('Marcus Reed');
+    $this->get(route('admin.testimonials.show', $testimonial))->assertOk()->assertSee('Sophia Hayes')->assertSee('Incredible service throughout!');
+    $this->get(route('admin.blog-posts.show', $post))->assertOk()->assertSee('Draft Travel Story');
+
+    $this->get(route('tours.show', $tour))->assertNotFound();
+    $this->get(route('destinations.show', $destination))->assertNotFound();
+    $this->get(route('blog.show', $post))->assertNotFound();
+});

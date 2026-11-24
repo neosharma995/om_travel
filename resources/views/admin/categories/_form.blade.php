@@ -12,6 +12,22 @@
     </div>
 
     <div class="form-group">
+        <label for="parent_id" class="form-label">Parent Category (optional)</label>
+        <select id="parent_id" name="parent_id" class="form-control">
+            <option value="">None (Top-Level Category)</option>
+            @foreach ($parentCategories as $parentOption)
+                <option value="{{ $parentOption->id }}" @selected((string) old('parent_id', $category->parent_id) === (string) $parentOption->id)>{{ $parentOption->displayNameWithParent() }}</option>
+            @endforeach
+        </select>
+        @error('parent_id') <span class="field-error">{{ $message }}</span> @enderror
+    </div>
+
+    <div class="form-group">
+        <label for="sort_order" class="form-label">Sort Order</label>
+        <input type="number" id="sort_order" name="sort_order" value="{{ old('sort_order', $category->sort_order ?? 0) }}" min="0" class="form-control">
+    </div>
+
+    <div class="form-group">
         <label for="image" class="form-label">Image Path / URL</label>
         <input type="text" id="image" name="image" value="{{ old('image', $category->image) }}" class="form-control" placeholder="/images/seed/cat-cruise.jpg">
         @error('image') <span class="field-error">{{ $message }}</span> @enderror
@@ -30,11 +46,6 @@
                 <img id="preview-category-img" src="/images/seed/cat-cruise.jpg" alt="Preview">
             </div>
         @endif
-    </div>
-
-    <div class="form-group">
-        <label for="sort_order" class="form-label">Sort Order</label>
-        <input type="number" id="sort_order" name="sort_order" value="{{ old('sort_order', $category->sort_order ?? 0) }}" min="0" class="form-control">
     </div>
 
     <div class="form-group" style="justify-content: center;">

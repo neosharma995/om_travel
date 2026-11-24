@@ -20,7 +20,7 @@ class BookingController extends Controller
             ->with('tour')
             ->when($status !== '', fn (Builder $query): Builder => $query->where('status', $status))
             ->latest()
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         return view('admin.bookings.index', [

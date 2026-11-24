@@ -611,3 +611,33 @@ test('footer includes working links to terms and privacy policy', function () {
         ->assertSee(route('terms'))
         ->assertSee(route('privacy'));
 });
+
+test('tours index category filter includes child category tours when parent category is selected', function () {
+    $parent = TourCategory::factory()->create(['name' => 'Marine Tours', 'slug' => 'marine-tours']);
+    $child = TourCategory::factory()->create(['name' => 'Reef Diving', 'slug' => 'reef-diving', 'parent_id' => $parent->id]);
+    $unrelated = TourCategory::factory()->create(['name' => 'Desert Safari', 'slug' => 'desert-safari']);
+
+    $parentTour = Tour::factory()->create([
+        'tour_category_id' => $parent->id,
+        'title' => 'Aegean Island Hopping',
+        'is_active' => true,
+    ]);
+
+    $childTour = Tour::factory()->create([
+        'tour_category_id' => $child->id,
+        'title' => 'Ari Atoll Coral Dive',
+        'is_active' => true,
+    ]);
+
+    $otherTour = Tour::factory()->create([
+        'tour_category_id' => $unrelated->id,
+        'title' => 'Sahara Dunes Camp',
+        'is_active' => true,
+    ]);
+
+    $this->get(route('tours.index', ['category' => 'marine-tours']))
+        ->assertOk()
+        ->assertSee($parentTour->title)
+        ->assertSee($childTour->title)
+        ->assertDontSee($otherTour->title);
+});
