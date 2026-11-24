@@ -24,7 +24,9 @@ class DashboardController extends Controller
     {
         $stats = [
             'toursCount' => Tour::query()->count(),
+            'activeToursCount' => Tour::query()->where('is_active', true)->count(),
             'destinationsCount' => Destination::query()->count(),
+            'popularDestinationsCount' => Destination::query()->where('is_popular', true)->count(),
             'categoriesCount' => TourCategory::query()->count(),
             'tourTypesCount' => TourType::query()->count(),
             'activitiesCount' => Activity::query()->count(),
@@ -34,6 +36,8 @@ class DashboardController extends Controller
             'blogPostsCount' => BlogPost::query()->count(),
             'bookingsCount' => Booking::query()->count(),
             'pendingBookingsCount' => Booking::query()->where('status', 'pending')->count(),
+            'confirmedBookingsCount' => Booking::query()->where('status', 'confirmed')->count(),
+            'totalRevenue' => Booking::query()->where('status', 'confirmed')->sum('total_price'),
             'inquiriesCount' => Inquiry::query()->count(),
             'newInquiriesCount' => Inquiry::query()->where('status', 'new')->count(),
             'trashedCount' => TrashItem::query()->count(),
