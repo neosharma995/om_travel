@@ -8,10 +8,10 @@
             <div class="tours-banner-content">
                 <span class="tours-banner-eyebrow">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                    Curated Global Expeditions
+                    Curated Himachal Expeditions
                 </span>
                 <h1 class="page-banner-title">Handcrafted Tour Packages</h1>
-                <p class="tours-banner-desc">Explore signature journeys across pristine coastlines, majestic alpine ridges, and untamed wildlife sanctuaries with our licensed guides.</p>
+                <p class="tours-banner-desc">Explore signature Himalayan journeys across snow-crowned summits, tranquil deodar valleys, and ancient Buddhist circuits with certified local mountain guides.</p>
                 <div class="breadcrumb">
                     <a href="{{ route('home') }}">Home</a>
                     <span>&rsaquo;</span>
@@ -40,6 +40,28 @@
 
     <section class="page-section tours-discovery-section">
         <div class="container">
+            {{-- Quick Experience Category Pill Bar --}}
+            <div class="tours-quick-categories-wrap" aria-label="Experience Categories">
+                <div class="tours-quick-categories">
+                    <a href="{{ route('tours.index', request()->except('category', 'page')) }}" 
+                       class="quick-category-pill {{ empty($filters['category']) ? 'is-active' : '' }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <span>All Experiences</span>
+                    </a>
+                    @foreach ($categories->whereNull('parent_id') as $cat)
+                        @php
+                            $isActive = $filters['category'] === $cat->slug;
+                            $catUrl = $isActive 
+                                ? route('tours.index', request()->except('category', 'page'))
+                                : route('tours.index', array_merge(request()->except('page'), ['category' => $cat->slug]));
+                        @endphp
+                        <a href="{{ $catUrl }}" class="quick-category-pill {{ $isActive ? 'is-active' : '' }}">
+                            <span>{{ $cat->name }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+
             {{-- Mobile Filter Toggle Bar --}}
             <div class="tours-mobile-filter-bar">
                 <button type="button" class="btn btn-outline-soft tours-filter-toggle-btn" id="toursFilterToggle" aria-expanded="false" aria-controls="toursFilterSidebar">
@@ -53,133 +75,162 @@
             </div>
 
             <div class="tours-discovery-layout">
-                {{-- Left Column: Sticky Filter Sidebar Console --}}
-                <aside class="tours-filter-sidebar filter-panel" id="toursFilterSidebar" aria-label="Tour Filters">
+                {{-- Search & Refine Console --}}
+                <aside class="tours-filter-sidebar" id="toursFilterSidebar" aria-label="Tour Filters">
                     <div class="filter-sidebar-card">
                         <div class="filter-sidebar-header">
                             <div class="filter-sidebar-title-group">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                                <h3>Filter Tours</h3>
-                            </div>
-                            @if ($hasActiveFilters)
-                                <a href="{{ route('tours.index') }}" class="filter-reset-link" title="Reset all filters">Reset All</a>
-                            @endif
-                        </div>
-
-                        <form action="{{ route('tours.index') }}" method="GET" class="filter-form tours-filter-form" id="toursFilterForm">
-                            {{-- Search Keyword --}}
-                            <div class="form-group filter-group">
-                                <label for="filter-search" class="form-label filter-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                    <span>Search Keyword</span>
-                                </label>
-                                <div class="filter-input-wrap">
-                                    <input type="text" id="filter-search" name="search" value="{{ $filters['search'] }}" class="form-control" placeholder="Destination or title">
+                                <div class="filter-header-icon-box">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                                </div>
+                                <div class="filter-header-text">
+                                    <span class="filter-kicker">Custom Journey Finder</span>
+                                    <h3>Filter Tours</h3>
                                 </div>
                             </div>
-
-                            {{-- Destination --}}
-                            <div class="form-group filter-group">
-                                <label for="filter-destination" class="form-label filter-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                    <span>Destination</span>
-                                </label>
-                                <div class="filter-select-wrap">
-                                    <select id="filter-destination" name="destination" class="form-control filter-select">
-                                        <option value="">All Destinations</option>
-                                        @foreach ($destinations as $dest)
-                                            <option value="{{ $dest->slug }}" @selected($filters['destination'] === $dest->slug)>{{ $dest->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            {{-- Category --}}
-                            <div class="form-group filter-group">
-                                <label for="filter-category" class="form-label filter-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                    <span>Category</span>
-                                </label>
-                                <div class="filter-select-wrap">
-                                    <select id="filter-category" name="category" class="form-control filter-select">
-                                        <option value="">All Categories</option>
-                                        @foreach ($categories as $cat)
-                                            <option value="{{ $cat->slug }}" @selected($filters['category'] === $cat->slug)>{{ $cat->displayNameWithParent() }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            {{-- Tour Type --}}
-                            <div class="form-group filter-group">
-                                <label for="filter-tour-type" class="form-label filter-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                                    <span>Tour Type</span>
-                                </label>
-                                <div class="filter-select-wrap">
-                                    <select id="filter-tour-type" name="tour_type" class="form-control filter-select">
-                                        <option value="">All Tour Types</option>
-                                        @foreach ($tourTypes as $type)
-                                            <option value="{{ $type->slug }}" @selected($filters['tour_type'] === $type->slug)>{{ $type->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-
-                            {{-- Activity --}}
-                            <div class="form-group filter-group">
-                                <label for="filter-activity" class="form-label filter-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                                    <span>Activity</span>
-                                </label>
-                                <div class="filter-select-wrap">
-                                    <select id="filter-activity" name="activity" class="form-control filter-select">
-                                        <option value="">All Activities</option>
-                                        @foreach ($activities as $act)
-                                            <option value="{{ $act->slug }}" @selected($filters['activity'] === $act->slug)>{{ $act->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-                                </div>
-                            </div>
-
-                            {{-- Duration --}}
-                            <div class="form-group filter-group">
-                                <label for="filter-duration" class="form-label filter-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                    <span>Duration</span>
-                                </label>
-                                <div class="filter-select-wrap">
-                                    <select id="filter-duration" name="duration" class="form-control filter-select">
-                                        <option value="">Any Duration</option>
-                                        <option value="short" @selected($filters['duration'] === 'short')>1 - 3 Days</option>
-                                        <option value="medium" @selected($filters['duration'] === 'medium')>4 - 6 Days</option>
-                                        <option value="long" @selected($filters['duration'] === 'long')>7+ Days</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            {{-- Max Budget (₹) --}}
-                            <div class="form-group filter-group">
-                                <label for="filter-price" class="form-label filter-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                    <span>Max Budget (₹)</span>
-                                </label>
-                                <div class="filter-input-wrap">
-                                    <input type="number" id="filter-price" name="max_price" value="{{ $filters['max_price'] }}" min="0" step="10" class="form-control" placeholder="e.g. 50000">
-                                </div>
-                            </div>
-
-                            <div class="filter-actions">
-                                <button type="submit" class="btn btn-cyan filter-submit-btn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                                    <span>Filter Tours</span>
-                                </button>
+                            <div class="filter-header-meta">
+                                <span class="filter-results-counter">
+                                    <span class="live-dot" aria-hidden="true"></span>
+                                    {{ $tours->total() }} {{ \Illuminate\Support\Str::plural('Journey', $tours->total()) }} Available
+                                </span>
                                 @if ($hasActiveFilters)
-                                    <a href="{{ route('tours.index') }}" class="btn btn-outline-soft filter-clear-btn">
-                                        <span>Reset Filters</span>
+                                    <a href="{{ route('tours.index') }}" class="filter-reset-link" title="Reset all filters">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                        <span>Reset All</span>
                                     </a>
                                 @endif
+                            </div>
+                        </div>
+
+                        <form action="{{ route('tours.index') }}" method="GET" class="tours-filter-form" id="toursFilterForm">
+                            {{-- Row 1: Primary Search Criteria (3 Columns) --}}
+                            <div class="filter-form-grid">
+                                {{-- Search Keyword --}}
+                                <div class="form-group filter-group">
+                                    <label for="filter-search" class="form-label filter-label">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        <span>Search Keyword</span>
+                                    </label>
+                                    <div class="filter-input-wrap">
+                                        <input type="text" id="filter-search" name="search" value="{{ $filters['search'] }}" class="form-control" placeholder="Destination, pass, or title">
+                                    </div>
+                                </div>
+
+                                {{-- Destination --}}
+                                <div class="form-group filter-group">
+                                    <label for="filter-destination" class="form-label filter-label">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                        <span>Destination</span>
+                                    </label>
+                                    <div class="filter-select-wrap">
+                                        <select id="filter-destination" name="destination" class="form-control filter-select">
+                                            <option value="">All Destinations</option>
+                                            @foreach ($destinations as $dest)
+                                                <option value="{{ $dest->slug }}" @selected($filters['destination'] === $dest->slug)>{{ $dest->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {{-- Category --}}
+                                <div class="form-group filter-group">
+                                    <label for="filter-category" class="form-label filter-label">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                        <span>Category</span>
+                                    </label>
+                                    <div class="filter-select-wrap">
+                                        <select id="filter-category" name="category" class="form-control filter-select">
+                                            <option value="">All Categories</option>
+                                            @foreach ($categories as $cat)
+                                                <option value="{{ $cat->slug }}" @selected($filters['category'] === $cat->slug)>{{ $cat->displayNameWithParent() }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {{-- Row 2: Travel Preferences --}}
+                                {{-- Tour Type --}}
+                                <div class="form-group filter-group">
+                                    <label for="filter-tour-type" class="form-label filter-label">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                                        <span>Tour Type</span>
+                                    </label>
+                                    <div class="filter-select-wrap">
+                                        <select id="filter-tour-type" name="tour_type" class="form-control filter-select">
+                                            <option value="">All Tour Types</option>
+                                            @foreach ($tourTypes as $type)
+                                                <option value="{{ $type->slug }}" @selected($filters['tour_type'] === $type->slug)>{{ $type->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {{-- Duration --}}
+                                <div class="form-group filter-group">
+                                    <label for="filter-duration" class="form-label filter-label">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                        <span>Duration</span>
+                                    </label>
+                                    <div class="filter-select-wrap">
+                                        <select id="filter-duration" name="duration" class="form-control filter-select">
+                                            <option value="">Any Duration</option>
+                                            <option value="short" @selected($filters['duration'] === 'short')>1 - 3 Days (Weekend)</option>
+                                            <option value="medium" @selected($filters['duration'] === 'medium')>4 - 6 Days (Standard)</option>
+                                            <option value="long" @selected($filters['duration'] === 'long')>7+ Days (Expedition)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {{-- Max Budget (₹) --}}
+                                <div class="form-group filter-group">
+                                    <label for="filter-price" class="form-label filter-label">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                        <span>Max Budget (₹)</span>
+                                    </label>
+                                    <div class="filter-input-wrap">
+                                        <input type="number" id="filter-price" name="max_price" value="{{ $filters['max_price'] }}" min="0" step="10" class="form-control" placeholder="e.g. 50000">
+                                    </div>
+                                </div>
+
+                                {{-- Activity (Only rendered if distinct activities exist to prevent category repetition) --}}
+                                @if ($activities->isNotEmpty())
+                                    <div class="form-group filter-group">
+                                        <label for="filter-activity" class="form-label filter-label">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                            <span>Activity</span>
+                                        </label>
+                                        <div class="filter-select-wrap">
+                                            <select id="filter-activity" name="activity" class="form-control filter-select">
+                                                <option value="">All Activities</option>
+                                                @foreach ($activities as $act)
+                                                    <option value="{{ $act->slug }}" @selected($filters['activity'] === $act->slug)>{{ $act->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                @elseif (!empty($filters['activity']))
+                                    <input type="hidden" name="activity" value="{{ $filters['activity'] }}">
+                                @endif
+                            </div>
+
+                            {{-- Filter Console Bottom Toolbar --}}
+                            <div class="filter-console-actions">
+                                <div class="filter-actions-hint">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                    <span>Combine multiple options to pinpoint handpicked Himachal itineraries</span>
+                                </div>
+                                <div class="filter-actions-buttons">
+                                    @if ($hasActiveFilters)
+                                        <a href="{{ route('tours.index') }}" class="btn btn-outline-soft filter-clear-btn">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                            <span>Reset</span>
+                                        </a>
+                                    @endif
+                                    <button type="submit" class="btn btn-cyan filter-submit-btn">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                                        <span>Filter Tours</span>
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     </div>
