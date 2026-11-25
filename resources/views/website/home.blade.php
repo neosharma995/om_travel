@@ -224,19 +224,17 @@
                                             <a href="{{ route('tours.index', ['category' => $category->slug]) }}"
                                                data-category-slug="{{ $category->slug }}">{{ $category->name }}</a>
                                         </h3>
-                                        <a class="line-btn" href="{{ route('tours.index', ['category' => $category->slug]) }}">See More</a>
+                                        <!-- <a class="line-btn" href="{{ route('tours.index', ['category' => $category->slug]) }}">See More</a> -->
                                     </div>
                                 </div>
                             @endforeach
                         </div>
                     </div>
-
                     <div class="slider-pagination" id="categorySliderDots" role="tablist" aria-label="Tour categories pagination"></div>
                 </div>
             @endif
         </div>
     </section>
-
     <section class="destinations-section" id="destinations" aria-label="Popular Destinations">
         <div class="container">
             <div class="section-head-split dest-head">

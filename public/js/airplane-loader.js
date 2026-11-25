@@ -1,25 +1,30 @@
 /**
- * OmTravel — Premium Full-Screen 3D Airplane Loading Experience
+ * OmTravel — Photorealistic Red & White AS350 Three-Blade Tourist Helicopter Loader
  *
- * Plays once per browser session on the homepage for at least 10 seconds:
- *   0–2s: Minimal bottom-left airport & small airliner visible; engines spool up
- *   2–4s: Airliner accelerates along the runway and lifts its nose (Vr)
- *   4–6s: Airliner physically lifts off, retracts landing gear, climbs diagonally
- *   6–10s: Continuous bottom-left -> top-right ascent with realistic perspective recession
- *   >10s: Smooth cross-fade reveal into the homepage once resources are ready
+ * Loads the dedicated GLB model (/models/as350-tourist.glb) via Three.js GLTFLoader,
+ * animates all three 120-degree main rotor blades and the tail rotor independently,
+ * and drives the vertical helipad takeoff -> diagonal Himalayan mountain climb.
  */
+
 (function () {
     'use strict';
 
     const STORAGE_KEY = 'omtravel_intro_played';
-    const MIN_DURATION_MS = 10000;
-    const THREE_CDN = 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.min.js';
+    const MIN_DURATION_MS = 10400;
+    const LIFTOFF_T = 0.385; // ~4.0 seconds
+    const EXIT_T = 0.96;     // ~9.98 seconds
+    const BG_NAT_W = 1376;
+    const BG_NAT_H = 768;
+    const HELIPAD_U = 0.3015;
+    const HELIPAD_V = 0.8700;
+    const MODEL_URL = '/models/as350-tourist.glb';
+    const THREE_CDN = 'https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js';
+    const GLTF_LOADER_CDN = 'https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js';
     const GSAP_CDN = 'https://cdn.jsdelivr.net/npm/gsap@3.12.7/dist/gsap.min.js';
 
     const root = document.documentElement;
     const overlay = document.getElementById('omIntroLoader');
 
-    // Bail immediately if loader shouldn't run (reduced motion, already played, or missing DOM)
     if (!overlay || !root.classList.contains('om-intro-active')) {
         if (overlay) {
             overlay.style.display = 'none';
@@ -33,29 +38,40 @@
         return;
     }
 
+    const sceneryImg = document.getElementById('omLoaderSceneryImg');
     const cloudsCanvas = document.getElementById('omLoaderCloudsCanvas');
     const airportCanvas = document.getElementById('omLoaderAirportCanvas');
+    const rotorWashCanvas = document.getElementById('omLoaderRotorWashCanvas');
     const webglCanvas = document.getElementById('omLoaderWebglCanvas');
     const fallbackStage = document.getElementById('omLoaderFallbackStage');
-    const fallbackPlane = document.getElementById('omLoaderPlaneFallback');
-    const fallbackGear = document.getElementById('omFallbackGear');
+    const fallbackHeli = document.getElementById('omLoaderHeliFallback');
+    const fallbackMainRotor = document.getElementById('omFallbackMainRotor');
+    const fallbackTailRotor = document.getElementById('omFallbackTailRotor');
     const progressFill = document.getElementById('omLoaderProgressFill');
 
     const startTime = performance.now();
     let resourcesReady = document.readyState === 'complete';
+    let sceneryReady = !sceneryImg || sceneryImg.complete;
+    let modelReady = false;
     let hasExited = false;
     let isDisposed = false;
     let rafId = null;
 
-    const markResourcesLoaded = () => {
-        resourcesReady = true;
-    };
-
     if (!resourcesReady) {
-        window.addEventListener('load', markResourcesLoaded, { once: true });
+        window.addEventListener('load', () => {
+            resourcesReady = true;
+        }, { once: true });
     }
 
-    // Pre-decode active hero background image while loader plays
+    if (sceneryImg && !sceneryReady) {
+        sceneryImg.addEventListener('load', () => {
+            sceneryReady = true;
+        }, { once: true });
+        sceneryImg.addEventListener('error', () => {
+            sceneryReady = true;
+        }, { once: true });
+    }
+
     const firstHeroSlide = document.querySelector('.hero-slide.is-active');
     if (firstHeroSlide) {
         const bgMatch = (firstHeroSlide.style.backgroundImage || '').match(/url\(['"]?(.*?)['"]?\)/);
@@ -69,7 +85,7 @@
         try {
             window.sessionStorage.setItem(STORAGE_KEY, '1');
         } catch (err) {
-            // Ignore storage access restrictions in private browsing modes
+            // Ignore storage access restrictions
         }
     }
 
@@ -83,7 +99,7 @@
     }
 
     // -------------------------------------------------------------------------
-    // Math & Responsive Runway Geometry Helpers
+    // Math & Helipad Camera-Tracked Coordinate Mapper
     // -------------------------------------------------------------------------
     function clamp01(val) {
         return Math.max(0, Math.min(1, val));
@@ -91,10 +107,6 @@
 
     function lerp(a, b, t) {
         return a + (b - a) * t;
-    }
-
-    function lerpPt(a, b, t) {
-        return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
     }
 
     function smoothstep(edge0, edge1, x) {
@@ -114,66 +126,53 @@
         };
     }
 
-    function cubicBezierTangent(p0, p1, p2, p3, t) {
-        const u = 1 - t;
-        return {
-            x: 3 * u * u * (p1.x - p0.x) + 6 * u * t * (p2.x - p1.x) + 3 * t * t * (p3.x - p2.x),
-            y: 3 * u * u * (p1.y - p0.y) + 6 * u * t * (p2.y - p1.y) + 3 * t * t * (p3.y - p2.y),
-        };
-    }
+    function getSceneLayout(t, vw, vh) {
+        const natW = (sceneryImg && sceneryImg.naturalWidth) ? sceneryImg.naturalWidth : BG_NAT_W;
+        const natH = (sceneryImg && sceneryImg.naturalHeight) ? sceneryImg.naturalHeight : BG_NAT_H;
+        const isMobile = vw < 768;
+        const basePosX = isMobile ? 0.18 : 0.0;
+        const basePosY = 1.0;
 
-    /**
-     * Shared viewport-responsive airport & runway coordinates (20-25% bottom-left footprint).
-     * Both the airport canvas and the 3D airplane / fallback consume these exact points
-     * so the wheels track the runway centerline pixel-for-pixel across all devices.
-     */
-    function getRunwayLayout(vw, vh) {
-        let runwayOrigin;
-        let runwayEnd;
-        let terminalAnchor;
+        const coverScale = Math.max(vw / natW, vh / natH);
+        const renW = natW * coverScale;
+        const renH = natH * coverScale;
+        const baseOffsetX = (vw - renW) * basePosX;
+        const baseOffsetY = (vh - renH) * basePosY;
 
-        if (vw >= 1024) {
-            runwayOrigin = { x: vw * 0.028, y: vh * 0.928 };
-            runwayEnd = { x: vw * 0.305, y: vh * 0.778 };
-            terminalAnchor = { x: vw * 0.032, y: vh * 0.812 };
-        } else if (vw >= 768) {
-            runwayOrigin = { x: vw * 0.025, y: vh * 0.912 };
-            runwayEnd = { x: vw * 0.385, y: vh * 0.768 };
-            terminalAnchor = { x: vw * 0.030, y: vh * 0.798 };
-        } else {
-            // Mobile: keep bottom ~14% clear for centered tagline & progress bar
-            runwayOrigin = { x: vw * 0.022, y: vh * 0.855 };
-            runwayEnd = { x: vw * 0.525, y: vh * 0.735 };
-            terminalAnchor = { x: vw * 0.028, y: vh * 0.745 };
+        const trackProg = smoothstep(LIFTOFF_T, EXIT_T, t);
+        const camZoom = 1.0 + 0.048 * trackProg;
+        const camShiftX = -vw * (isMobile ? 0.042 : 0.032) * trackProg;
+        const camShiftY = -vh * 0.022 * trackProg;
+
+        if (sceneryImg) {
+            sceneryImg.style.transformOrigin = '0px 0px';
+            sceneryImg.style.transform =
+                `translate3d(${camShiftX.toFixed(2)}px, ${camShiftY.toFixed(2)}px, 0) scale(${camZoom.toFixed(5)})`;
         }
 
-        const startPt = lerpPt(runwayOrigin, runwayEnd, 0.14);
-        const liftoffPt = lerpPt(runwayOrigin, runwayEnd, 0.82);
-        const runwayDx = liftoffPt.x - startPt.x;
-        const runwayDy = liftoffPt.y - startPt.y;
-        // Positive angle in radians (counter-clockwise upward-right from +X axis)
-        const runwayAngle = Math.atan2(-runwayDy, runwayDx);
+        const uvToScreen = (u, v) => ({
+            x: (baseOffsetX + u * renW) * camZoom + camShiftX,
+            y: (baseOffsetY + v * renH) * camZoom + camShiftY,
+        });
+
+        const helipadPt = uvToScreen(HELIPAD_U, HELIPAD_V);
 
         return {
-            runwayOrigin,
-            runwayEnd,
-            terminalAnchor,
-            startPt,
-            liftoffPt,
-            runwayDx,
-            runwayDy,
-            runwayAngle,
+            helipadPt,
+            coverScale,
+            isMobile,
         };
     }
 
     // -------------------------------------------------------------------------
-    // 1. Multi-Layer Clouds & Minimal Bottom-Left Airport Scene
+    // 1. Drifting Clouds, Helipad Shadow & Rotor-Wash Dust System
     // -------------------------------------------------------------------------
     const cloudController = createCloudLayerSystem(cloudsCanvas);
-    const airportController = createAirportSceneRenderer(airportCanvas);
+    const shadowController = createHelipadShadowRenderer(airportCanvas);
+    const rotorWashController = createRotorWashSystem(rotorWashCanvas);
 
     // -------------------------------------------------------------------------
-    // 2. Dynamic Script Loader (Non-blocking, short timeout, graceful fallback)
+    // 2. Dynamic Script Loader
     // -------------------------------------------------------------------------
     function loadScript(src, timeoutMs) {
         return new Promise((resolve, reject) => {
@@ -230,157 +229,140 @@
     }
 
     // -------------------------------------------------------------------------
-    // 3. Continuous Bottom-Left Runway Takeoff -> Top-Right Sky Flight Kinematics
+    // 3. Helicopter Takeoff -> Forward Tilt -> Himalayan Mountain Flight State
     // -------------------------------------------------------------------------
-    /**
-     * Timeline (minimum 10 seconds):
-     *   0.0 - 0.2 (0-2s): Airport & airliner visible; engines spool up, brake release
-     *   0.2 - 0.4 (2-4s): Accelerates along bottom-left runway; nose lifts before liftoff (3.3-4s)
-     *   0.4 - 0.6 (4-6s): Physically leaves runway, retracts gear, climbs diagonally bottom-left -> top-right
-     *   0.6 - 1.0 (6-10s): Continues climbing smoothly towards top-right, receding in depth until full exit
-     */
     function sampleFlightState(tRaw, nowSec, vw, vh) {
         const t = clamp01(tRaw);
-        const layout = getRunwayLayout(vw, vh);
+        const layout = getSceneLayout(t, vw, vh);
+        const pad = layout.helipadPt;
 
-        let screenPt;
-        let climbAngle;
-        let groundY = layout.startPt.y;
-        let altitudePx = 0;
-
-        if (t <= 0.4) {
-            // Phase 1 & 2 (0–4s): On runway
-            let sRunway = 0;
-            if (t <= 0.2) {
-                // 0–2s: Poised at threshold, subtle brake-release creep in last 0.4s
-                sRunway = 0.03 * smoothstep(0.15, 0.2, t);
-            } else {
-                // 2–4s: Smooth accelerating takeoff roll along runway
-                const u = (t - 0.2) / 0.2;
-                sRunway = 0.03 + 0.97 * Math.pow(u, 1.62);
-            }
-
-            screenPt = lerpPt(layout.startPt, layout.liftoffPt, sRunway);
-            groundY = screenPt.y;
-
-            // Nose rotation (Vr) right before leaving the runway (3.3s -> 4.0s)
-            const rotationProgress = smoothstep(0.33, 0.4, t);
-            const noseLiftAngle = rotationProgress * 0.21; // ~12 deg nose-up rotation
-            climbAngle = layout.runwayAngle + noseLiftAngle;
+        let mainRotorSpeed;
+        if (t < 0.19) {
+            mainRotorSpeed = lerp(0.9, 10.5, smoothstep(0.02, 0.19, t));
+        } else if (t < LIFTOFF_T) {
+            mainRotorSpeed = lerp(10.5, 34.0, smoothstep(0.19, LIFTOFF_T, t));
         } else {
-            // Phase 3 & 4 (4–10s): C1-continuous liftoff & diagonal climb bottom-left -> top-right
-            const u = (t - 0.4) / 0.6;
+            mainRotorSpeed = 35.0;
+        }
+        const tailRotorSpeed = mainRotorSpeed * 4.5;
+        const rotorBlurFactor = smoothstep(0.18, 0.36, t);
 
-            // Match exact runway exit velocity at t = 0.40 for seamless zero-jump transition
-            const exitSpeedInT = 0.97 * 1.62 / 0.2; // 7.857
-            const exitSpeedInU = exitSpeedInT * 0.6; // 4.714
+        let screenX = pad.x;
+        let screenY = pad.y;
+        let forwardPitch = 0;
+        let bankRoll = 0;
+        let climbYaw = 0;
 
-            const p0 = layout.liftoffPt;
-            const p1 = {
-                x: p0.x + (layout.runwayDx * exitSpeedInU) / 3,
-                y: p0.y + (layout.runwayDy * exitSpeedInU) / 3,
-            };
-            const p2 = {
-                x: vw * 0.84,
-                y: vh * 0.24,
-            };
-            const p3 = {
-                x: vw * 1.18,
-                y: -vh * 0.16,
-            };
+        const hoverHeightPx = Math.min(vh * 0.21, 165);
 
-            screenPt = cubicBezierPt(p0, p1, p2, p3, u);
-            const tang = cubicBezierTangent(p0, p1, p2, p3, u);
-            const pathSlopeAngle = Math.atan2(-tang.y, tang.x);
+        if (t <= LIFTOFF_T) {
+            const skidPreLift = smoothstep(LIFTOFF_T - 0.025, LIFTOFF_T, t) * 4.0;
+            screenY = pad.y - skidPreLift;
+            forwardPitch = -0.02 * smoothstep(LIFTOFF_T - 0.04, LIFTOFF_T, t);
+        } else {
+            const p0 = { x: pad.x, y: pad.y - 4.0 };
+            const p1 = { x: pad.x + vw * 0.018, y: pad.y - hoverHeightPx * 1.18 };
+            const p2 = { x: vw * (layout.isMobile ? 0.68 : 0.62), y: vh * 0.41 };
+            const p3 = { x: vw * (layout.isMobile ? 0.98 : 0.94), y: vh * 0.20 };
 
-            // Blend smoothly from rotated takeoff attitude into climb angle of attack
-            const takeoffAttitude = layout.runwayAngle + 0.21;
-            const airborneAngle = pathSlopeAngle + 0.06;
-            climbAngle = lerp(takeoffAttitude, airborneAngle, smoothstep(0.0, 0.22, u));
+            const airU = clamp01((t - LIFTOFF_T) / (EXIT_T - LIFTOFF_T));
+            const pt = cubicBezierPt(p0, p1, p2, p3, airU);
+            screenX = pt.x;
+            screenY = pt.y;
 
-            // Ground plane projection for shadow fade-out during climb
-            const groundLineT = clamp01((screenPt.x - layout.startPt.x) / Math.max(1, layout.runwayDx));
-            groundY = lerp(layout.startPt.y, layout.liftoffPt.y, groundLineT);
-            altitudePx = Math.max(0, groundY - screenPt.y);
+            forwardPitch = lerp(0, 0.22, smoothstep(LIFTOFF_T + 0.04, LIFTOFF_T + 0.22, t))
+                * (1 - smoothstep(0.75, 0.96, t) * 0.25);
+
+            bankRoll = lerp(0, -0.18, smoothstep(LIFTOFF_T + 0.06, LIFTOFF_T + 0.30, t));
+            climbYaw = lerp(0, 0.14, smoothstep(LIFTOFF_T + 0.05, LIFTOFF_T + 0.35, t));
         }
 
-        const ndcX = (screenPt.x / Math.max(1, vw)) * 2 - 1;
-        const ndcY = 1 - (screenPt.y / Math.max(1, vh)) * 2;
+        const altitudePx = Math.max(0, pad.y - screenY);
 
-        // Subtle perspective depth recession into the sky after liftoff
-        const airProgress = clamp01((t - 0.4) / 0.6);
-        const depthZ = lerp(0.0, -0.45, clamp01(t / 0.4)) + lerp(0.0, -6.2, Math.pow(airProgress, 1.08));
-        const depthScale = lerp(1.0, 0.96, clamp01(t / 0.4)) * lerp(1.0, 0.56, Math.pow(airProgress, 1.05));
+        const vibAmp = (t > 0.12 && t < 0.48)
+            ? 0.004 * smoothstep(0.12, 0.25, t) * (1 - smoothstep(0.38, 0.48, t))
+            : 0;
+        const vibY = Math.sin(nowSec * 42) * vibAmp * 160;
+        const vibPitch = Math.cos(nowSec * 38) * vibAmp;
 
-        // Subtle landing gear retraction between 4.4s and 5.8s
-        const gearDeploy = 1 - smoothstep(0.44, 0.58, t);
+        const airTrim = smoothstep(LIFTOFF_T + 0.05, LIFTOFF_T + 0.2, t);
+        const microRoll = Math.sin(nowSec * 1.55) * 0.018 * airTrim;
+        const microPitch = Math.cos(nowSec * 1.25) * 0.012 * airTrim;
 
-        // Gentle aerodynamic banking roll once airborne + subtle live flight trim
-        const airborneTrim = smoothstep(0.4, 0.55, t);
-        const microRoll = Math.sin(nowSec * 1.5) * 0.022 * airborneTrim;
-        const microPitch = Math.cos(nowSec * 1.2) * 0.012 * airborneTrim;
-        const runwayVibration = (t > 0.22 && t < 0.4) ? Math.sin(nowSec * 36) * 0.004 : 0;
+        const finalScreenY = screenY + vibY;
+        const ndcX = (screenX / Math.max(1, vw)) * 2 - 1;
+        const ndcY = 1 - (finalScreenY / Math.max(1, vh)) * 2;
 
-        const bankRoll = lerp(0, 0.26, smoothstep(0.42, 0.68, t)) + microRoll;
-        const pitchAngle = climbAngle + microPitch + runwayVibration;
+        const distU = clamp01((t - LIFTOFF_T - 0.05) / (EXIT_T - LIFTOFF_T - 0.05));
+        const depthZ = lerp(0.0, -14.5, Math.pow(distU, 1.15));
+        const depthScale = lerp(1.0, 0.22, Math.pow(distU, 1.05));
 
-        // Turbofan spool-up: idle (6) -> takeoff thrust (34)
-        const fanSpeed = t < 0.2
-            ? lerp(7, 18, smoothstep(0.02, 0.2, t))
-            : lerp(18, 35, smoothstep(0.2, 0.34, t));
+        const shadowAlpha = Math.max(0, 0.44 * (1 - smoothstep(0, 145, altitudePx)));
+        const downwashIntensity = smoothstep(0.20, 0.36, t) * (1 - smoothstep(0.45, 0.60, t));
 
-        // Ground shadow opacity & spread directly under aircraft on runway
-        const shadowAlpha = t < 0.4
-            ? 0.26
-            : Math.max(0, 0.26 * (1 - smoothstep(0.4, 0.53, t)));
-
-        const opacity = t > 0.96 ? 1 - smoothstep(0.96, 1.0, t) * 0.3 : 1;
+        const hasDisappeared = t >= EXIT_T;
+        const opacity = hasDisappeared ? 0 : (t > EXIT_T - 0.10 ? 1 - smoothstep(EXIT_T - 0.10, EXIT_T, t) : 1);
 
         return {
             t,
-            screenX: screenPt.x,
-            screenY: screenPt.y,
-            groundY,
+            helipadX: pad.x,
+            helipadY: pad.y,
+            screenX,
+            screenY: finalScreenY,
             altitudePx,
             shadowAlpha,
+            downwashIntensity,
             ndcX,
             ndcY,
             depthZ,
             depthScale,
-            pitchAngle,
-            bankRoll,
-            gearDeploy,
-            fanSpeed,
+            forwardPitch: forwardPitch + vibPitch + microPitch,
+            bankRoll: bankRoll + microRoll,
+            climbYaw,
+            mainRotorSpeed,
+            tailRotorSpeed,
+            rotorBlurFactor,
+            hasDisappeared,
             opacity,
         };
     }
 
     // -------------------------------------------------------------------------
-    // 4. Aircraft Renderer Initialization (Three.js 3D -> 2.5D SVG Fallback)
+    // 4. GLB Helicopter Renderer Initialization (Three.js GLTFLoader -> Fallback)
     // -------------------------------------------------------------------------
-    let aircraftRenderer = null;
+    let heliRenderer = null;
 
     function activateFallbackRenderer() {
+        modelReady = true;
         if (webglCanvas) {
             webglCanvas.style.display = 'none';
         }
-        if (fallbackStage && fallbackPlane) {
+        if (fallbackStage && fallbackHeli) {
             fallbackStage.hidden = false;
-            aircraftRenderer = createFallbackPlaneRenderer(fallbackPlane, fallbackGear);
+            heliRenderer = createFallbackHeliRenderer(fallbackHeli, fallbackMainRotor, fallbackTailRotor);
         }
     }
 
     if (hasWebGLSupport()) {
-        loadScript(THREE_CDN, 3200)
+        loadScript(THREE_CDN, 4500)
+            .then(() => loadScript(GLTF_LOADER_CDN, 4500))
             .then(() => {
-                if (isDisposed || !window.THREE) {
+                if (isDisposed || !window.THREE || !window.THREE.GLTFLoader) {
                     activateFallbackRenderer();
+                    return null;
+                }
+                return createGltfHelicopterRenderer(webglCanvas, MODEL_URL);
+            })
+            .then((rendererInstance) => {
+                if (isDisposed) {
+                    if (rendererInstance && rendererInstance.dispose) {
+                        rendererInstance.dispose();
+                    }
                     return;
                 }
-                try {
-                    aircraftRenderer = createThreeAirlinerRenderer(webglCanvas);
-                } catch (err) {
-                    activateFallbackRenderer();
+                if (rendererInstance) {
+                    heliRenderer = rendererInstance;
+                    modelReady = true;
                 }
             })
             .catch(() => {
@@ -392,7 +374,6 @@
         activateFallbackRenderer();
     }
 
-    // Optional GSAP enhancement for smooth UI reveal (non-blocking)
     loadScript(GSAP_CDN, 2800)
         .then(() => {
             if (!isDisposed && window.gsap) {
@@ -408,12 +389,11 @@
             }
         })
         .catch(() => {
-            // Pure CSS + RAF timeline handles everything seamlessly without GSAP
+            // Pure CSS + RAF handles timing smoothly without GSAP
         });
 
-    // Hard safety net: never trap user if resources stall far beyond load
     const emergencyTimer = window.setTimeout(() => {
-        if (!hasExited && resourcesReady) {
+        if (!hasExited && resourcesReady && sceneryReady) {
             beginExitTransition();
         }
     }, 26000);
@@ -438,27 +418,27 @@
         const vh = window.innerHeight;
         const flight = sampleFlightState(timelineProgress, nowSec, vw, vh);
 
-        // Update soft sky clouds (drifting opposite the bottom-left -> top-right flight)
         if (cloudController) {
             cloudController.update(dt, nowSec);
         }
 
-        // Update bottom-left airport, runway lights, and real-time ground shadow
-        if (airportController) {
-            airportController.update(nowSec, flight);
+        if (shadowController) {
+            shadowController.update(flight, vw);
         }
 
-        // Update 3D or fallback airliner
-        if (aircraftRenderer) {
-            aircraftRenderer.update(flight, dt, nowSec);
+        if (rotorWashController) {
+            rotorWashController.update(dt, nowSec, flight, vw);
         }
 
-        // Update thin loading progress bar
+        if (heliRenderer) {
+            heliRenderer.update(flight, dt, nowSec);
+        }
+
         if (progressFill) {
             let barRatio;
             if (timelineProgress < 1) {
                 barRatio = 0.92 * (1 - Math.pow(1 - timelineProgress, 1.32));
-            } else if (!resourcesReady) {
+            } else if (!resourcesReady || !sceneryReady || !modelReady) {
                 const extraSec = (elapsedMs - MIN_DURATION_MS) / 1000;
                 barRatio = 0.92 + 0.05 * (1 - Math.exp(-extraSec * 0.35));
             } else {
@@ -467,8 +447,7 @@
             progressFill.style.transform = `scaleX(${barRatio.toFixed(4)})`;
         }
 
-        // Exit only after BOTH >= 10 seconds AND essential page resources are ready
-        if (!hasExited && elapsedMs >= MIN_DURATION_MS && resourcesReady) {
+        if (!hasExited && elapsedMs >= MIN_DURATION_MS && resourcesReady && sceneryReady && modelReady) {
             beginExitTransition();
             return;
         }
@@ -501,11 +480,14 @@
             if (rafId) {
                 window.cancelAnimationFrame(rafId);
             }
-            if (aircraftRenderer && typeof aircraftRenderer.dispose === 'function') {
-                aircraftRenderer.dispose();
+            if (heliRenderer && typeof heliRenderer.dispose === 'function') {
+                heliRenderer.dispose();
             }
-            if (airportController && typeof airportController.dispose === 'function') {
-                airportController.dispose();
+            if (rotorWashController && typeof rotorWashController.dispose === 'function') {
+                rotorWashController.dispose();
+            }
+            if (shadowController && typeof shadowController.dispose === 'function') {
+                shadowController.dispose();
             }
             if (cloudController && typeof cloudController.dispose === 'function') {
                 cloudController.dispose();
@@ -516,17 +498,17 @@
         }, 980);
     }
 
-    // If WebGL hasn't initialized within 900ms, switch cleanly to 2.5D SVG fallback
+    // If GLB + WebGL cannot initialize within 3.5s, fall back seamlessly so animation never stalls
     window.setTimeout(() => {
-        if (!isDisposed && !aircraftRenderer) {
+        if (!isDisposed && !heliRenderer) {
             activateFallbackRenderer();
         }
-    }, 900);
+    }, 3500);
 
     rafId = window.requestAnimationFrame(tick);
 
     // =========================================================================
-    // Cloud Layer Renderer (Offscreen-Cached Realistic Soft Clouds on Canvas 2D)
+    // Subtle Drifting Sky Clouds
     // =========================================================================
     function createCloudLayerSystem(canvas) {
         if (!canvas) {
@@ -554,42 +536,30 @@
         window.addEventListener('resize', resize, { passive: true });
 
         const sprites = [
-            buildCloudSprite(360, 190, 14, 0.92),
-            buildCloudSprite(420, 210, 16, 0.88),
-            buildCloudSprite(300, 160, 12, 0.85),
-            buildCloudSprite(460, 220, 18, 0.82),
-            buildCloudSprite(340, 175, 13, 0.90),
-        ];
-
-        // Gentle drift opposite bottom-left -> top-right flight (top-right -> bottom-left)
-        const layers = [
-            { count: 6, speedY: 6.5, speedX: -9.5, scaleMin: 0.65, scaleMax: 1.05, alphaMin: 0.22, alphaMax: 0.34 },
-            { count: 7, speedY: 13.0, speedX: -18.5, scaleMin: 0.75, scaleMax: 1.25, alphaMin: 0.36, alphaMax: 0.54 },
-            { count: 4, speedY: 20.0, speedX: -28.0, scaleMin: 0.95, scaleMax: 1.40, alphaMin: 0.14, alphaMax: 0.24 },
+            buildCloudSprite(380, 175, 14, 0.80),
+            buildCloudSprite(440, 195, 16, 0.76),
+            buildCloudSprite(320, 150, 12, 0.72),
         ];
 
         const clouds = [];
-        layers.forEach((layer, layerIdx) => {
-            for (let i = 0; i < layer.count; i++) {
-                const sprite = sprites[(i + layerIdx * 2) % sprites.length];
-                const scale = lerp(layer.scaleMin, layer.scaleMax, ((i * 37 + layerIdx * 19) % 100) / 100);
-                const respScale = Math.max(0.55, Math.min(1.15, width / 1280));
-                const drawW = sprite.width * scale * respScale;
-                const drawH = sprite.height * scale * respScale;
+        for (let i = 0; i < 8; i++) {
+            const sprite = sprites[i % sprites.length];
+            const scale = lerp(0.68, 1.28, ((i * 37) % 100) / 100);
+            const respScale = Math.max(0.55, Math.min(1.15, width / 1280));
+            const drawW = sprite.width * scale * respScale;
+            const drawH = sprite.height * scale * respScale;
 
-                clouds.push({
-                    sprite,
-                    x: ((i + 0.35) / layer.count) * (width + drawW * 0.6) - drawW * 0.3,
-                    // Keep clouds concentrated in upper 78% so bottom-left airport remains clean & natural
-                    y: (((i * 0.618 + layerIdx * 0.27) % 1) * (height * 0.78)) - drawH * 0.4,
-                    w: drawW,
-                    h: drawH,
-                    speedY: layer.speedY * (0.9 + (i % 3) * 0.1),
-                    speedX: layer.speedX * (0.9 + (i % 3) * 0.1),
-                    alpha: lerp(layer.alphaMin, layer.alphaMax, (i % 4) / 3),
-                });
-            }
-        });
+            clouds.push({
+                sprite,
+                x: ((i + 0.25) / 8) * (width + drawW * 0.5) - drawW * 0.25,
+                y: (((i * 0.618) % 1) * (height * 0.44)) - drawH * 0.25,
+                w: drawW,
+                h: drawH,
+                speedX: -lerp(6.5, 14.5, (i % 4) / 3),
+                speedY: lerp(2.0, 5.0, (i % 3) / 2),
+                alpha: lerp(0.14, 0.26, (i % 4) / 3),
+            });
+        }
 
         return {
             update(dt) {
@@ -597,16 +567,15 @@
 
                 for (let i = 0; i < clouds.length; i++) {
                     const c = clouds[i];
-                    c.y += c.speedY * dt;
                     c.x += c.speedX * dt;
+                    c.y += c.speedY * dt;
 
-                    if (c.y > height * 0.82) {
-                        c.y = -c.h * 0.85;
-                        c.x = width * 0.25 + ((c.x + width) % (width * 0.85));
+                    if (c.y > height * 0.48) {
+                        c.y = -c.h * 0.75;
                     }
                     if (c.x < -c.w * 0.95) {
                         c.x = width + c.w * 0.2;
-                        c.y = ((i * 0.37) % 0.65) * height - c.h * 0.3;
+                        c.y = ((i * 0.37) % 0.42) * height - c.h * 0.2;
                     }
 
                     ctx.globalAlpha = c.alpha;
@@ -626,34 +595,17 @@
         off.height = h;
         const c = off.getContext('2d');
 
-        for (let i = 0; i < Math.floor(puffCount * 0.5); i++) {
-            const t = i / Math.max(1, Math.floor(puffCount * 0.5) - 1);
-            const cx = lerp(w * 0.22, w * 0.78, t) + Math.sin(i * 2.1) * 14;
-            const cy = h * 0.60 + Math.cos(i * 1.7) * 8;
-            const rx = lerp(w * 0.14, w * 0.23, Math.sin(t * Math.PI));
-
-            const grad = c.createRadialGradient(cx, cy, rx * 0.05, cx, cy, rx);
-            grad.addColorStop(0, `rgba(212, 232, 246, ${0.42 * density})`);
-            grad.addColorStop(0.55, `rgba(224, 240, 250, ${0.18 * density})`);
-            grad.addColorStop(1, 'rgba(224, 240, 250, 0)');
-            c.fillStyle = grad;
-            c.beginPath();
-            c.arc(cx, cy, rx, 0, Math.PI * 2);
-            c.fill();
-        }
-
         for (let i = 0; i < puffCount; i++) {
             const t = i / Math.max(1, puffCount - 1);
             const bell = Math.sin(t * Math.PI);
-            const cx = lerp(w * 0.18, w * 0.82, t) + Math.cos(i * 3.1) * 12;
-            const cy = lerp(h * 0.56, h * 0.34, bell) + Math.sin(i * 2.4) * 10;
-            const rx = lerp(w * 0.11, w * 0.22, bell) * (0.85 + (i % 3) * 0.12);
+            const cx = lerp(w * 0.16, w * 0.84, t) + Math.cos(i * 3.1) * 14;
+            const cy = lerp(h * 0.58, h * 0.38, bell) + Math.sin(i * 2.4) * 9;
+            const rx = lerp(w * 0.12, w * 0.23, bell) * (0.85 + (i % 3) * 0.12);
 
-            const grad = c.createRadialGradient(cx, cy - rx * 0.12, rx * 0.05, cx, cy, rx);
-            grad.addColorStop(0, `rgba(255, 255, 255, ${0.88 * density})`);
-            grad.addColorStop(0.42, `rgba(255, 255, 255, ${0.48 * density})`);
-            grad.addColorStop(0.76, `rgba(246, 251, 255, ${0.14 * density})`);
-            grad.addColorStop(1, 'rgba(246, 251, 255, 0)');
+            const grad = c.createRadialGradient(cx, cy - rx * 0.1, rx * 0.05, cx, cy, rx);
+            grad.addColorStop(0, `rgba(255, 255, 255, ${0.86 * density})`);
+            grad.addColorStop(0.45, `rgba(255, 255, 255, ${0.42 * density})`);
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
             c.fillStyle = grad;
             c.beginPath();
             c.arc(cx, cy, rx, 0, Math.PI * 2);
@@ -664,9 +616,9 @@
     }
 
     // =========================================================================
-    // Minimal Realistic Bottom-Left Airport Renderer (Terminal, Runway, Lights)
+    // Real-Time Helipad Contact Shadow
     // =========================================================================
-    function createAirportSceneRenderer(canvas) {
+    function createHelipadShadowRenderer(canvas) {
         if (!canvas) {
             return null;
         }
@@ -691,270 +643,34 @@
         resize();
         window.addEventListener('resize', resize, { passive: true });
 
-        function drawGlowDot(x, y, radius, rgb, alpha) {
-            const grad = ctx.createRadialGradient(x, y, 0, x, y, radius * 3.2);
-            grad.addColorStop(0, `rgba(${rgb}, ${alpha})`);
-            grad.addColorStop(0.35, `rgba(${rgb}, ${alpha * 0.55})`);
-            grad.addColorStop(1, `rgba(${rgb}, 0)`);
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(x, y, radius * 3.2, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, alpha * 1.15)})`;
-            ctx.beginPath();
-            ctx.arc(x, y, Math.max(0.9, radius * 0.42), 0, Math.PI * 2);
-            ctx.fill();
-        }
-
         return {
-            update(nowSec, flight) {
+            update(flight, vw) {
                 ctx.clearRect(0, 0, width, height);
 
-                const layout = getRunwayLayout(width, height);
-                const o = layout.runwayOrigin;
-                const e = layout.runwayEnd;
-                const term = layout.terminalAnchor;
-
-                const dx = e.x - o.x;
-                const dy = e.y - o.y;
-                const len = Math.hypot(dx, dy) || 1;
-                const ux = dx / len;
-                const uy = dy / len;
-                // Perpendicular upward-left unit normal to runway
-                const nx = uy;
-                const ny = -ux;
-
-                const uiScale = Math.max(0.68, Math.min(1.12, width / 1366));
-
-                // 1. Soft atmospheric horizon ground wedge blending cleanly into sky
-                const groundSpanX = e.x + width * 0.12;
-                const groundTopY = Math.min(e.y, term.y) - 34 * uiScale;
-                const groundGrad = ctx.createRadialGradient(
-                    o.x + dx * 0.35,
-                    height * 0.94,
-                    len * 0.1,
-                    o.x + dx * 0.35,
-                    height * 0.94,
-                    groundSpanX * 0.92
-                );
-                groundGrad.addColorStop(0, 'rgba(173, 203, 220, 0.68)');
-                groundGrad.addColorStop(0.55, 'rgba(198, 224, 238, 0.42)');
-                groundGrad.addColorStop(0.85, 'rgba(225, 242, 250, 0.16)');
-                groundGrad.addColorStop(1, 'rgba(235, 247, 254, 0)');
-
-                ctx.fillStyle = groundGrad;
-                ctx.beginPath();
-                ctx.moveTo(0, height);
-                ctx.lineTo(0, groundTopY + 26 * uiScale);
-                ctx.quadraticCurveTo(
-                    e.x * 0.55,
-                    groundTopY - 8 * uiScale,
-                    groundSpanX,
-                    height
-                );
-                ctx.closePath();
-                ctx.fill();
-
-                // 2. Minimal Modern Airport Terminal & Air Traffic Control Tower (upper-left of runway)
-                const tx = term.x;
-                const ty = term.y;
-
-                // Subtle apron tarmac pad connecting terminal to runway
-                ctx.fillStyle = 'rgba(120, 146, 162, 0.32)';
-                ctx.beginPath();
-                ctx.moveTo(tx + 8 * uiScale, ty + 14 * uiScale);
-                ctx.lineTo(tx + 122 * uiScale, ty + 14 * uiScale);
-                ctx.lineTo(o.x + dx * 0.42, o.y + dy * 0.42);
-                ctx.lineTo(o.x + dx * 0.16, o.y + dy * 0.16);
-                ctx.closePath();
-                ctx.fill();
-
-                // Sleek Air Traffic Control Tower
-                const towerX = tx + 16 * uiScale;
-                const towerBaseY = ty + 8 * uiScale;
-                const towerH = 44 * uiScale;
-
-                ctx.fillStyle = 'rgba(72, 102, 118, 0.85)';
-                ctx.beginPath();
-                ctx.moveTo(towerX - 5 * uiScale, towerBaseY);
-                ctx.lineTo(towerX - 3.2 * uiScale, towerBaseY - towerH);
-                ctx.lineTo(towerX + 3.2 * uiScale, towerBaseY - towerH);
-                ctx.lineTo(towerX + 5 * uiScale, towerBaseY);
-                ctx.closePath();
-                ctx.fill();
-
-                // ATC observation cab
-                ctx.fillStyle = 'rgba(42, 74, 88, 0.9)';
-                ctx.beginPath();
-                ctx.moveTo(towerX - 8.5 * uiScale, towerBaseY - towerH - 8 * uiScale);
-                ctx.lineTo(towerX + 8.5 * uiScale, towerBaseY - towerH - 8 * uiScale);
-                ctx.lineTo(towerX + 6 * uiScale, towerBaseY - towerH);
-                ctx.lineTo(towerX - 6 * uiScale, towerBaseY - towerH);
-                ctx.closePath();
-                ctx.fill();
-
-                // Illuminated ATC glass strip
-                ctx.fillStyle = 'rgba(162, 224, 245, 0.85)';
-                ctx.fillRect(
-                    towerX - 6.5 * uiScale,
-                    towerBaseY - towerH - 6.2 * uiScale,
-                    13 * uiScale,
-                    3.2 * uiScale
-                );
-
-                // ATC Roof & Antenna + Pulsing Aviation Beacon
-                ctx.fillStyle = 'rgba(235, 245, 250, 0.9)';
-                ctx.fillRect(towerX - 9.5 * uiScale, towerBaseY - towerH - 9.8 * uiScale, 19 * uiScale, 2 * uiScale);
-                ctx.strokeStyle = 'rgba(72, 102, 118, 0.85)';
-                ctx.lineWidth = 1.2;
-                ctx.beginPath();
-                ctx.moveTo(towerX, towerBaseY - towerH - 9.8 * uiScale);
-                ctx.lineTo(towerX, towerBaseY - towerH - 18 * uiScale);
-                ctx.stroke();
-
-                const towerPulse = 0.45 + 0.55 * Math.pow(Math.max(0, Math.sin(nowSec * 2.6)), 6);
-                drawGlowDot(towerX, towerBaseY - towerH - 18.5 * uiScale, 2.5 * uiScale, '255, 190, 110', towerPulse * 0.9);
-
-                // Minimalist Curved-Roof Glass Terminal Concourse
-                const concX = tx + 34 * uiScale;
-                const concY = ty + 10 * uiScale;
-                const concW = 92 * uiScale;
-                const concH = 22 * uiScale;
-
-                // Main facade
-                const termGrad = ctx.createLinearGradient(concX, concY - concH, concX, concY);
-                termGrad.addColorStop(0, 'rgba(65, 98, 115, 0.90)');
-                termGrad.addColorStop(1, 'rgba(92, 128, 146, 0.86)');
-                ctx.fillStyle = termGrad;
-                ctx.beginPath();
-                ctx.moveTo(concX, concY);
-                ctx.lineTo(concX, concY - concH * 0.72);
-                ctx.quadraticCurveTo(concX + concW * 0.5, concY - concH * 1.15, concX + concW, concY - concH * 0.68);
-                ctx.lineTo(concX + concW, concY);
-                ctx.closePath();
-                ctx.fill();
-
-                // Glass curtain wall with subtle warm terminal glow
-                const glassGrad = ctx.createLinearGradient(concX, concY - concH * 0.7, concX + concW, concY);
-                glassGrad.addColorStop(0, 'rgba(255, 224, 172, 0.42)');
-                glassGrad.addColorStop(0.55, 'rgba(155, 218, 240, 0.58)');
-                glassGrad.addColorStop(1, 'rgba(195, 234, 248, 0.45)');
-                ctx.fillStyle = glassGrad;
-                ctx.fillRect(concX + 6 * uiScale, concY - concH * 0.58, concW - 14 * uiScale, concH * 0.42);
-
-                // Clean white cantilevered canopy roofline
-                ctx.strokeStyle = 'rgba(250, 253, 255, 0.92)';
-                ctx.lineWidth = Math.max(2, 2.6 * uiScale);
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(concX - 4 * uiScale, concY - concH * 0.72);
-                ctx.quadraticCurveTo(concX + concW * 0.5, concY - concH * 1.18, concX + concW + 5 * uiScale, concY - concH * 0.68);
-                ctx.stroke();
-
-                // 3. Perspective Runway Strip (aligned exactly to takeoff vector)
-                const halfWidthStart = 20 * uiScale;
-                const halfWidthEnd = 9.5 * uiScale;
-
-                const pStartTop = { x: o.x + nx * halfWidthStart, y: o.y + ny * halfWidthStart };
-                const pStartBot = { x: o.x - nx * halfWidthStart, y: o.y - ny * halfWidthStart };
-                const pEndTop = { x: e.x + nx * halfWidthEnd, y: e.y + ny * halfWidthEnd };
-                const pEndBot = { x: e.x - nx * halfWidthEnd, y: e.y - ny * halfWidthEnd };
-
-                const rwyGrad = ctx.createLinearGradient(o.x, o.y, e.x, e.y);
-                rwyGrad.addColorStop(0, 'rgba(54, 73, 86, 0.92)');
-                rwyGrad.addColorStop(0.65, 'rgba(78, 100, 114, 0.85)');
-                rwyGrad.addColorStop(0.92, 'rgba(116, 142, 158, 0.52)');
-                rwyGrad.addColorStop(1, 'rgba(182, 212, 228, 0.08)');
-
-                ctx.fillStyle = rwyGrad;
-                ctx.beginPath();
-                ctx.moveTo(pStartTop.x, pStartTop.y);
-                ctx.lineTo(pEndTop.x, pEndTop.y);
-                ctx.lineTo(pEndBot.x, pEndBot.y);
-                ctx.lineTo(pStartBot.x, pStartBot.y);
-                ctx.closePath();
-                ctx.fill();
-
-                // Runway edge lines
-                ctx.strokeStyle = 'rgba(242, 249, 253, 0.42)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(pStartTop.x, pStartTop.y);
-                ctx.lineTo(pEndTop.x, pEndTop.y);
-                ctx.moveTo(pStartBot.x, pStartBot.y);
-                ctx.lineTo(pEndBot.x, pEndBot.y);
-                ctx.stroke();
-
-                // Threshold "piano-key" bars near bottom-left start
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)';
-                ctx.lineWidth = Math.max(1.4, 2.0 * uiScale);
-                const threshBase = lerpPt(o, e, 0.04);
-                const threshTip = lerpPt(o, e, 0.085);
-                for (let k = -2; k <= 2; k++) {
-                    if (k === 0) {
-                        continue;
-                    }
-                    const offset = k * 4.5 * uiScale;
-                    ctx.beginPath();
-                    ctx.moveTo(threshBase.x + nx * offset, threshBase.y + ny * offset);
-                    ctx.lineTo(threshTip.x + nx * offset * 0.92, threshTip.y + ny * offset * 0.92);
-                    ctx.stroke();
+                if (!flight || flight.shadowAlpha <= 0.01) {
+                    return;
                 }
 
-                // Dashed perspective centerline markings
-                const dashCount = 9;
-                for (let d = 0; d < dashCount; d++) {
-                    const t0 = 0.13 + d * 0.09;
-                    const t1 = Math.min(0.95, t0 + 0.045);
-                    const a = lerpPt(o, e, t0);
-                    const b = lerpPt(o, e, t1);
-                    const fade = 1 - t0 * 0.55;
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${0.72 * fade})`;
-                    ctx.lineWidth = lerp(2.2, 1.0, t0) * uiScale;
-                    ctx.beginPath();
-                    ctx.moveTo(a.x, a.y);
-                    ctx.lineTo(b.x, b.y);
-                    ctx.stroke();
-                }
+                const uiScale = Math.max(0.68, Math.min(1.25, vw / 1280));
+                const spread = 1 + (flight.altitudePx / 160) * 0.55;
+                const rx = 58 * uiScale * spread;
+                const ry = 13 * uiScale * spread;
 
-                // 4. Sequenced Runway Edge Lights
-                const lightCount = 10;
-                const chaseIndex = (nowSec * 3.4) % lightCount;
-                for (let i = 0; i <= lightCount; i++) {
-                    const frac = i / lightCount;
-                    const cPt = lerpPt(o, e, frac);
-                    const hw = lerp(halfWidthStart, halfWidthEnd, frac) + 2.5 * uiScale;
-                    const fade = 1 - frac * 0.35;
-                    const pulseDist = Math.abs(i - chaseIndex);
-                    const boost = pulseDist < 1.3 ? 1.25 : 0.85;
-                    const r = lerp(2.2, 1.3, frac) * uiScale;
+                const sx = lerp(flight.helipadX, flight.screenX, 0.35) + 10 * uiScale;
+                const sy = flight.helipadY + 4 * uiScale;
 
-                    const lightColor = i === 0 ? '130, 235, 175' : '255, 224, 158';
-                    drawGlowDot(cPt.x + nx * hw, cPt.y + ny * hw, r, lightColor, 0.72 * fade * boost);
-                    drawGlowDot(cPt.x - nx * hw, cPt.y - ny * hw, r, lightColor, 0.72 * fade * boost);
-                }
-
-                // 5. Real-time Aircraft Ground Shadow on Runway (fades away after liftoff)
-                if (flight && flight.shadowAlpha > 0.01) {
-                    const shadowScale = Math.max(0.35, 1 - flight.altitudePx / 120);
-                    const rx = 24 * uiScale * shadowScale;
-                    const ry = 5.5 * uiScale * shadowScale;
-
-                    ctx.save();
-                    ctx.translate(flight.screenX, flight.groundY + 4 * uiScale);
-                    ctx.rotate(-layout.runwayAngle);
-                    const sGrad = ctx.createRadialGradient(0, 0, rx * 0.1, 0, 0, rx);
-                    sGrad.addColorStop(0, `rgba(26, 46, 58, ${flight.shadowAlpha})`);
-                    sGrad.addColorStop(0.65, `rgba(26, 46, 58, ${flight.shadowAlpha * 0.38})`);
-                    sGrad.addColorStop(1, 'rgba(26, 46, 58, 0)');
-                    ctx.fillStyle = sGrad;
-                    ctx.scale(1, ry / rx);
-                    ctx.beginPath();
-                    ctx.arc(0, 0, rx, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.restore();
-                }
+                ctx.save();
+                ctx.translate(sx, sy);
+                const sGrad = ctx.createRadialGradient(0, 0, rx * 0.08, 0, 0, rx);
+                sGrad.addColorStop(0, `rgba(10, 14, 16, ${flight.shadowAlpha})`);
+                sGrad.addColorStop(0.55, `rgba(12, 16, 18, ${flight.shadowAlpha * 0.42})`);
+                sGrad.addColorStop(1, 'rgba(12, 16, 18, 0)');
+                ctx.fillStyle = sGrad;
+                ctx.scale(1, ry / rx);
+                ctx.beginPath();
+                ctx.arc(0, 0, rx, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
             },
             dispose() {
                 window.removeEventListener('resize', resize);
@@ -963,9 +679,163 @@
     }
 
     // =========================================================================
-    // Three.js Procedural 3D Commercial Passenger Airliner Renderer
+    // Realistic Rotor-Wash Ground Dust (Clean Dark Helipad, No Grass Overlay)
     // =========================================================================
-    function createThreeAirlinerRenderer(canvas) {
+    function createRotorWashSystem(canvas) {
+        if (!canvas) {
+            return null;
+        }
+        const ctx = canvas.getContext('2d', { alpha: true });
+        if (!ctx) {
+            return null;
+        }
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+
+        const resize = () => {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        };
+
+        resize();
+        window.addEventListener('resize', resize, { passive: true });
+
+        const dustSprite = document.createElement('canvas');
+        dustSprite.width = 64;
+        dustSprite.height = 64;
+        const dCtx = dustSprite.getContext('2d');
+        const dGrad = dCtx.createRadialGradient(32, 32, 2, 32, 32, 31);
+        dGrad.addColorStop(0.0, 'rgba(232, 224, 206, 0.85)');
+        dGrad.addColorStop(0.45, 'rgba(224, 218, 202, 0.36)');
+        dGrad.addColorStop(1.0, 'rgba(224, 218, 202, 0)');
+        dCtx.fillStyle = dGrad;
+        dCtx.fillRect(0, 0, 64, 64);
+
+        const dustParticles = [];
+        let spawnCarry = 0;
+
+        return {
+            update(dt, nowSec, flight, vw) {
+                ctx.clearRect(0, 0, width, height);
+
+                const uiScale = Math.max(0.66, Math.min(1.22, vw / 1280));
+                const wash = flight.downwashIntensity;
+                const padX = flight.helipadX;
+                const padY = flight.helipadY;
+                const padRx = 152 * uiScale;
+                const padRy = 34 * uiScale;
+
+                if (wash > 0.08) {
+                    spawnCarry += dt * 44 * wash;
+                    while (spawnCarry >= 1) {
+                        spawnCarry -= 1;
+                        const angle = Math.random() * Math.PI * 2;
+                        const dirX = Math.cos(angle);
+                        const dirY = Math.sin(angle);
+                        const startR = 0.50 + Math.random() * 0.42;
+                        const speed = (68 + Math.random() * 58) * uiScale * (0.55 + wash * 0.6);
+
+                        dustParticles.push({
+                            x: padX + dirX * padRx * startR,
+                            y: padY + dirY * padRy * startR,
+                            vx: dirX * speed,
+                            vy: dirY * speed * 0.22 - (7 + Math.random() * 10) * uiScale,
+                            age: 0,
+                            life: 1.0 + Math.random() * 0.7,
+                            rStart: (10 + Math.random() * 8) * uiScale,
+                            rEnd: (28 + Math.random() * 18) * uiScale,
+                            peakAlpha: 0.15 * wash,
+                        });
+                    }
+                }
+
+                for (let i = dustParticles.length - 1; i >= 0; i--) {
+                    const p = dustParticles[i];
+                    p.age += dt;
+                    if (p.age >= p.life) {
+                        dustParticles.splice(i, 1);
+                        continue;
+                    }
+
+                    const frac = p.age / p.life;
+                    const drag = Math.exp(-dt * 1.8);
+                    p.vx *= drag;
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+
+                    const rx = lerp(p.rStart, p.rEnd, Math.pow(frac, 0.7));
+                    const ry = rx * 0.44;
+                    const alpha = p.peakAlpha * smoothstep(0, 0.14, frac) * (1 - Math.pow(frac, 1.3));
+
+                    if (alpha > 0.002) {
+                        ctx.globalAlpha = alpha;
+                        ctx.drawImage(dustSprite, p.x - rx, p.y - ry, rx * 2, ry * 2);
+                    }
+                }
+                ctx.globalAlpha = 1;
+            },
+            dispose() {
+                dustParticles.length = 0;
+                window.removeEventListener('resize', resize);
+            },
+        };
+    }
+
+    // =========================================================================
+    // Three.js GLB Helicopter Renderer (Loads /models/as350-tourist.glb)
+    // =========================================================================
+    function applySRGB(THREE, obj, isRenderer) {
+        if (isRenderer) {
+            if ('outputColorSpace' in obj && THREE.SRGBColorSpace) {
+                obj.outputColorSpace = THREE.SRGBColorSpace;
+            } else if ('outputEncoding' in obj && THREE.sRGBEncoding) {
+                obj.outputEncoding = THREE.sRGBEncoding;
+            }
+            return;
+        }
+        if ('colorSpace' in obj && THREE.SRGBColorSpace) {
+            obj.colorSpace = THREE.SRGBColorSpace;
+        } else if ('encoding' in obj && THREE.sRGBEncoding) {
+            obj.encoding = THREE.sRGBEncoding;
+        }
+    }
+
+    function createSkyEnvironmentTexture(THREE) {
+        const c = document.createElement('canvas');
+        c.width = 512;
+        c.height = 256;
+        const ctx = c.getContext('2d');
+
+        const grad = ctx.createLinearGradient(0, 0, 0, c.height);
+        grad.addColorStop(0.0, '#4E97D4');
+        grad.addColorStop(0.35, '#9BD1F2');
+        grad.addColorStop(0.49, '#F4F9FD');
+        grad.addColorStop(0.54, '#839D6F');
+        grad.addColorStop(0.75, '#4F6D45');
+        grad.addColorStop(1.0, '#364A32');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, c.width, c.height);
+
+        const sunGrad = ctx.createRadialGradient(130, 74, 4, 130, 74, 90);
+        sunGrad.addColorStop(0, 'rgba(255, 250, 224, 1)');
+        sunGrad.addColorStop(0.35, 'rgba(255, 240, 196, 0.55)');
+        sunGrad.addColorStop(1, 'rgba(255, 240, 196, 0)');
+        ctx.fillStyle = sunGrad;
+        ctx.fillRect(0, 0, c.width, c.height * 0.55);
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        applySRGB(THREE, tex, false);
+        return tex;
+    }
+
+    function createGltfHelicopterRenderer(canvas, glbUrl) {
         const THREE = window.THREE;
         const renderer = new THREE.WebGLRenderer({
             canvas,
@@ -980,465 +850,254 @@
         renderer.setSize(width, height, false);
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.08;
+        applySRGB(THREE, renderer, true);
 
         const scene = new THREE.Scene();
-        const FOV = 36;
+
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        const envTexture = createSkyEnvironmentTexture(THREE);
+        const envRT = pmrem.fromEquirectangular(envTexture);
+        scene.environment = envRT.texture;
+        envTexture.dispose();
+        pmrem.dispose();
+
+        const FOV = 35;
         const CAM_Z = 12;
-        const camera = new THREE.PerspectiveCamera(FOV, width / height, 0.1, 60);
+        const camera = new THREE.PerspectiveCamera(FOV, width / height, 0.1, 80);
         camera.position.set(0, 0, CAM_Z);
 
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x9ac6e2, 1.38);
+        const hemiLight = new THREE.HemisphereLight(0xf6fbff, 0x5c724c, 1.15);
         scene.add(hemiLight);
 
-        const sunLight = new THREE.DirectionalLight(0xfffaf0, 1.85);
-        sunLight.position.set(7, 11, 9);
+        const sunLight = new THREE.DirectionalLight(0xfff4dc, 2.35);
+        sunLight.position.set(-9, 10, 8);
         scene.add(sunLight);
 
-        const rimLight = new THREE.DirectionalLight(0xd4eefc, 0.78);
-        rimLight.position.set(-7, -2, -5);
+        const rimLight = new THREE.DirectionalLight(0xcbe8fa, 0.8);
+        rimLight.position.set(8, -2, -5);
         scene.add(rimLight);
 
-        const { aircraftGroup, fans, gearParts, navBeacon } = buildCommercialAirlinerModel(THREE);
+        const loader = new THREE.GLTFLoader();
 
-        // Outer rig controls position, scale, and screen-space climb pitch (Z rotation)
-        const flightRig = new THREE.Group();
-        // Orient local +Z nose along +X (right) and slightly away (-Z), local +Y up
-        aircraftGroup.rotation.order = 'YXZ';
-        aircraftGroup.rotation.y = Math.PI / 2 + 0.24;
-        flightRig.add(aircraftGroup);
-        scene.add(flightRig);
+        return new Promise((resolve, reject) => {
+            loader.load(
+                glbUrl,
+                (gltf) => {
+                    const heliRoot = gltf.scene;
+                    const mainRotor = heliRoot.getObjectByName('MainRotor');
+                    const tailRotor = heliRoot.getObjectByName('TailRotor');
+                    const trackedMaterials = [];
 
-        const handleResize = () => {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-            renderer.setSize(width, height, false);
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-        };
+                    // Enhance PBR reflections & glass response on loaded GLB materials
+                    heliRoot.traverse((node) => {
+                        if (!node.isMesh || !node.material) {
+                            return;
+                        }
+                        const mats = Array.isArray(node.material) ? node.material : [node.material];
+                        mats.forEach((mat) => {
+                            mat.envMapIntensity = mat.transparent ? 1.65 : 1.25;
+                            mat.userData = mat.userData || {};
+                            mat.userData.baseOpacity = mat.opacity !== undefined ? mat.opacity : 1;
+                            mat.userData.baseTransparent = Boolean(mat.transparent);
+                            trackedMaterials.push(mat);
+                        });
+                    });
 
-        window.addEventListener('resize', handleResize, { passive: true });
+                    // Add 3 subtle 3D geometric motion-blur blade echoes inside MainRotor (aligned to 0, +120, -120 deg)
+                    const mainBlurMeshes = [];
+                    if (mainRotor) {
+                        const bladeAzimuths = [0, (2 * Math.PI) / 3, -(2 * Math.PI) / 3];
+                        const trailOffsets = [
+                            { angle: 0.12, opacity: 0.22, chord: 0.42 },
+                            { angle: 0.28, opacity: 0.13, chord: 0.65 },
+                            { angle: 0.48, opacity: 0.06, chord: 0.90 },
+                        ];
 
-        const getTargetScreenWidthRatio = () => {
-            if (width >= 1024) {
-                return 0.098; // Small, realistic 8–12% of screen width on desktop
-            }
-            if (width >= 768) {
-                return 0.12; // Proportional on tablet
-            }
-            return 0.15; // Proportional on mobile
-        };
+                        bladeAzimuths.forEach((az) => {
+                            trailOffsets.forEach((tr) => {
+                                const bMat = new THREE.MeshBasicMaterial({
+                                    color: 0x2a333c,
+                                    transparent: true,
+                                    opacity: 0,
+                                    side: THREE.DoubleSide,
+                                    depthWrite: false,
+                                });
+                                const bMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.35, tr.chord), bMat);
+                                bMesh.rotation.x = -Math.PI / 2;
+                                bMesh.position.set(2.85, 0.14, 0);
+                                bMesh.visible = false;
 
-        const fovRad = THREE.MathUtils.degToRad(FOV);
-
-        return {
-            update(flight, dt, nowSec) {
-                const aspect = width / Math.max(1, height);
-                const distFromCam = CAM_Z - flight.depthZ;
-                const halfH = distFromCam * Math.tan(fovRad / 2);
-                const halfW = halfH * aspect;
-
-                // Keep fuselage ~10% of screen width at depth=0, shrinking smoothly with distance
-                const baseHalfW = CAM_Z * Math.tan(fovRad / 2) * aspect;
-                const baseWorldLen = baseHalfW * 2 * getTargetScreenWidthRatio();
-                const finalScale = (baseWorldLen / 1.92) * flight.depthScale;
-                flightRig.scale.setScalar(finalScale);
-
-                // Offset perpendicular to runway while landing gear is extended so tires rest on runway
-                const gearLiftWorld = 0.185 * finalScale * flight.gearDeploy;
-                flightRig.position.set(
-                    flight.ndcX * halfW - Math.sin(flight.pitchAngle) * gearLiftWorld,
-                    flight.ndcY * halfH + Math.cos(flight.pitchAngle) * gearLiftWorld,
-                    flight.depthZ
-                );
-
-                // Pitch along runway -> Vr rotation -> diagonal climb bottom-left -> top-right
-                flightRig.rotation.z = flight.pitchAngle;
-
-                // Subtle airborne banking roll around aircraft's own longitudinal (+Z) nose axis
-                aircraftGroup.rotation.z = flight.bankRoll;
-
-                // Retractable landing gear animation
-                for (let i = 0; i < gearParts.length; i++) {
-                    const g = gearParts[i];
-                    g.group.visible = flight.gearDeploy > 0.03;
-                    g.group.scale.y = Math.max(0.01, flight.gearDeploy);
-                    g.group.rotation.x = (1 - flight.gearDeploy) * 1.15;
-                }
-
-                // Turbofan engine spool-up & continuous spin
-                for (let i = 0; i < fans.length; i++) {
-                    fans[i].rotation.z += dt * flight.fanSpeed;
-                }
-
-                // Subtle anti-collision beacon pulse
-                if (navBeacon) {
-                    const pulse = Math.pow(Math.max(0, Math.sin(nowSec * 3.8)), 14);
-                    navBeacon.material.opacity = 0.25 + pulse * 0.75;
-                }
-
-                renderer.render(scene, camera);
-            },
-            dispose() {
-                window.removeEventListener('resize', handleResize);
-                scene.traverse((obj) => {
-                    if (obj.geometry) {
-                        obj.geometry.dispose();
-                    }
-                    if (obj.material) {
-                        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-                        mats.forEach((m) => {
-                            if (m.map) {
-                                m.map.dispose();
-                            }
-                            m.dispose();
+                                const pivot = new THREE.Group();
+                                pivot.rotation.y = -az + tr.angle;
+                                pivot.add(bMesh);
+                                mainRotor.add(pivot);
+                                mainBlurMeshes.push({ mesh: bMesh, baseOpacity: tr.opacity });
+                            });
                         });
                     }
-                });
-                renderer.dispose();
-            },
-        };
-    }
 
-    function buildCommercialAirlinerModel(THREE) {
-        const group = new THREE.Group();
-        const fans = [];
-        const gearParts = [];
+                    // Shift model slightly along Z so its fuselage center sits nicely over the helipad 'H'
+                    heliRoot.position.set(0, 0, 1.5);
 
-        const fuselageTex = createAirlinerLiveryTexture(THREE);
+                    const flightRig = new THREE.Group();
+                    const attitudeGroup = new THREE.Group();
+                    attitudeGroup.add(heliRoot);
+                    flightRig.add(attitudeGroup);
+                    scene.add(flightRig);
 
-        const bodyMat = new THREE.MeshPhysicalMaterial({
-            map: fuselageTex,
-            roughness: 0.25,
-            metalness: 0.08,
-            clearcoat: 0.78,
-            clearcoatRoughness: 0.14,
-        });
+                    const handleResize = () => {
+                        width = window.innerWidth;
+                        height = window.innerHeight;
+                        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+                        renderer.setSize(width, height, false);
+                        camera.aspect = width / height;
+                        camera.updateProjectionMatrix();
+                    };
 
-        const wingMat = new THREE.MeshPhysicalMaterial({
-            color: 0xf4f8fc,
-            roughness: 0.28,
-            metalness: 0.12,
-            clearcoat: 0.65,
-            clearcoatRoughness: 0.18,
-        });
+                    window.addEventListener('resize', handleResize, { passive: true });
 
-        const accentMat = new THREE.MeshPhysicalMaterial({
-            color: 0x189ec0,
-            roughness: 0.28,
-            metalness: 0.15,
-            clearcoat: 0.7,
-        });
+                    const getTargetScreenWidthRatio = () => {
+                        if (width >= 1024) {
+                            return 0.21;
+                        }
+                        if (width >= 768) {
+                            return 0.23;
+                        }
+                        return 0.28;
+                    };
 
-        const navyMat = new THREE.MeshPhysicalMaterial({
-            color: 0x113d48,
-            roughness: 0.3,
-            metalness: 0.15,
-            clearcoat: 0.6,
-        });
+                    const fovRad = THREE.MathUtils.degToRad(FOV);
 
-        const metalMat = new THREE.MeshStandardMaterial({
-            color: 0xc8d5e0,
-            roughness: 0.22,
-            metalness: 0.82,
-        });
+                    resolve({
+                        update(flight, dt) {
+                            if (flight.hasDisappeared || flight.opacity <= 0.01) {
+                                renderer.clear();
+                                return;
+                            }
 
-        const darkFanMat = new THREE.MeshStandardMaterial({
-            color: 0x1a2730,
-            roughness: 0.5,
-            metalness: 0.55,
-        });
+                            const aspect = width / Math.max(1, height);
+                            const distFromCam = CAM_Z - flight.depthZ;
+                            const halfH = distFromCam * Math.tan(fovRad / 2);
+                            const halfW = halfH * aspect;
 
-        // 1. Sleek Aerodynamic Fuselage (length ~ 1.92 along Z)
-        const profile = [];
-        const numPts = 42;
-        for (let i = 0; i <= numPts; i++) {
-            const u = i / numPts;
-            const z = lerp(0.98, -0.94, u);
-            let r;
-            if (u < 0.18) {
-                const k = u / 0.18;
-                r = 0.095 * Math.pow(Math.sin((k * Math.PI) / 2), 0.72);
-            } else if (u < 0.66) {
-                r = 0.095;
-            } else {
-                const k = (u - 0.66) / 0.34;
-                r = 0.095 * Math.pow(1 - Math.pow(k, 1.45), 0.78);
-            }
-            profile.push(new THREE.Vector2(Math.max(0.001, r), z));
-        }
+                            // GLB full length is ~11.0m (rotor-to-tail span ~12.27m)
+                            const baseHalfW = CAM_Z * Math.tan(fovRad / 2) * aspect;
+                            const baseWorldSpan = baseHalfW * 2 * getTargetScreenWidthRatio();
+                            const finalScale = (baseWorldSpan / 11.4) * flight.depthScale;
+                            flightRig.scale.setScalar(finalScale);
 
-        const fuselageGeo = new THREE.LatheGeometry(profile, 36);
-        fuselageGeo.rotateX(Math.PI / 2);
-        fuselageGeo.scale(0.94, 1.04, 1.0);
-        const fuselage = new THREE.Mesh(fuselageGeo, bodyMat);
-        group.add(fuselage);
+                            // Skid bottom in GLB is at y = -1.107 -> offset upward so skids rest directly on helipad
+                            const skidOffsetWorld = 1.107 * finalScale;
+                            flightRig.position.set(
+                                flight.ndcX * halfW,
+                                flight.ndcY * halfH + skidOffsetWorld,
+                                flight.depthZ
+                            );
 
-        // 2. Swept Supercritical Main Wings (Span = 2.0)
-        const wingShape = new THREE.Shape();
-        wingShape.moveTo(0.06, 0.24);
-        wingShape.lineTo(0.98, -0.26);
-        wingShape.lineTo(1.0, -0.34);
-        wingShape.lineTo(0.06, -0.14);
-        wingShape.closePath();
+                            // 3/4 view matching reference helicopter profile heading right toward Himalayan peaks
+                            flightRig.rotation.y = Math.PI / 2 + 0.34 + flight.climbYaw;
 
-        const wingExtrudeOpts = {
-            depth: 0.016,
-            bevelEnabled: true,
-            bevelThickness: 0.006,
-            bevelSize: 0.008,
-            bevelSegments: 2,
-        };
+                            attitudeGroup.rotation.order = 'ZXY';
+                            attitudeGroup.rotation.x = flight.forwardPitch;
+                            attitudeGroup.rotation.z = flight.bankRoll;
 
-        const rightWingGeo = new THREE.ExtrudeGeometry(wingShape, wingExtrudeOpts);
-        rightWingGeo.rotateX(Math.PI / 2);
-        const rightWing = new THREE.Mesh(rightWingGeo, wingMat);
-        rightWing.position.set(0, -0.012, 0.04);
-        rightWing.rotation.z = 0.075;
-        group.add(rightWing);
+                            // 1. Continuous 360-degree rotation of all THREE main rotor blades
+                            if (mainRotor) {
+                                mainRotor.rotation.y -= dt * flight.mainRotorSpeed;
+                            }
 
-        const leftWing = rightWing.clone();
-        leftWing.scale.x = -1;
-        leftWing.rotation.z = -0.075;
-        group.add(leftWing);
+                            for (let m = 0; m < mainBlurMeshes.length; m++) {
+                                const mb = mainBlurMeshes[m];
+                                mb.mesh.visible = flight.rotorBlurFactor > 0.02;
+                                mb.mesh.material.opacity = mb.baseOpacity * flight.rotorBlurFactor;
+                            }
 
-        // Wingtip Sharklets
-        const wingletShape = new THREE.Shape();
-        wingletShape.moveTo(0, 0);
-        wingletShape.lineTo(0.035, 0.085);
-        wingletShape.lineTo(0.055, 0.085);
-        wingletShape.lineTo(0.065, 0);
-        wingletShape.closePath();
+                            // 2. Independent continuous rotation of tail rotor
+                            if (tailRotor) {
+                                tailRotor.rotation.x += dt * flight.tailRotorSpeed;
+                            }
 
-        const wingletGeo = new THREE.ExtrudeGeometry(wingletShape, { depth: 0.005, bevelEnabled: false });
-        wingletGeo.rotateY(Math.PI / 2);
+                            if (flight.opacity < 0.99) {
+                                for (let i = 0; i < trackedMaterials.length; i++) {
+                                    const mat = trackedMaterials[i];
+                                    mat.transparent = true;
+                                    mat.opacity = mat.userData.baseOpacity * flight.opacity;
+                                }
+                            }
 
-        const rightWinglet = new THREE.Mesh(wingletGeo, accentMat);
-        rightWinglet.position.set(0.975, 0.054, -0.22);
-        rightWinglet.rotation.z = -0.22;
-        group.add(rightWinglet);
-
-        const leftWinglet = rightWinglet.clone();
-        leftWinglet.position.x = -0.975;
-        leftWinglet.rotation.z = 0.22;
-        group.add(leftWinglet);
-
-        // 3. Twin Underwing High-Bypass Turbofan Engines
-        [-0.33, 0.33].forEach((xPos) => {
-            const engineGroup = new THREE.Group();
-            engineGroup.position.set(xPos, -0.048, 0.14);
-
-            const nacelleGeo = new THREE.CylinderGeometry(0.048, 0.042, 0.22, 24, 1, true);
-            nacelleGeo.rotateX(Math.PI / 2);
-            engineGroup.add(new THREE.Mesh(nacelleGeo, wingMat));
-
-            const lipGeo = new THREE.TorusGeometry(0.047, 0.006, 12, 24);
-            const lip = new THREE.Mesh(lipGeo, metalMat);
-            lip.position.z = 0.11;
-            engineGroup.add(lip);
-
-            const fanDisk = new THREE.Mesh(new THREE.CircleGeometry(0.044, 20), darkFanMat);
-            fanDisk.position.z = 0.092;
-            engineGroup.add(fanDisk);
-
-            const spinnerGeo = new THREE.ConeGeometry(0.014, 0.032, 16);
-            spinnerGeo.rotateX(Math.PI / 2);
-            const spinner = new THREE.Mesh(spinnerGeo, metalMat);
-            spinner.position.z = 0.105;
-            engineGroup.add(spinner);
-
-            const nozzleGeo = new THREE.ConeGeometry(0.034, 0.07, 18);
-            nozzleGeo.rotateX(-Math.PI / 2);
-            const nozzle = new THREE.Mesh(nozzleGeo, darkFanMat);
-            nozzle.position.z = -0.125;
-            engineGroup.add(nozzle);
-
-            const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.055, 0.14), wingMat);
-            pylon.position.set(0, 0.045, -0.02);
-            engineGroup.add(pylon);
-
-            fans.push(fanDisk);
-            group.add(engineGroup);
-        });
-
-        // 4. Swept Horizontal Tail Stabilizers
-        const hTailShape = new THREE.Shape();
-        hTailShape.moveTo(0.02, 0.06);
-        hTailShape.lineTo(0.34, -0.13);
-        hTailShape.lineTo(0.35, -0.18);
-        hTailShape.lineTo(0.02, -0.09);
-        hTailShape.closePath();
-
-        const hTailGeo = new THREE.ExtrudeGeometry(hTailShape, {
-            depth: 0.01,
-            bevelEnabled: true,
-            bevelThickness: 0.004,
-            bevelSize: 0.004,
-            bevelSegments: 2,
-        });
-        hTailGeo.rotateX(Math.PI / 2);
-
-        const rightHTail = new THREE.Mesh(hTailGeo, wingMat);
-        rightHTail.position.set(0, 0.018, -0.76);
-        rightHTail.rotation.z = 0.08;
-        group.add(rightHTail);
-
-        const leftHTail = rightHTail.clone();
-        leftHTail.scale.x = -1;
-        leftHTail.rotation.z = -0.08;
-        group.add(leftHTail);
-
-        // 5. Tall Swept Vertical Tail Fin (OmTravel Navy & Cyan Livery)
-        const vTailShape = new THREE.Shape();
-        vTailShape.moveTo(0, 0);
-        vTailShape.lineTo(0.24, 0.30);
-        vTailShape.lineTo(0.35, 0.30);
-        vTailShape.lineTo(0.22, 0);
-        vTailShape.closePath();
-
-        const vTailGeo = new THREE.ExtrudeGeometry(vTailShape, {
-            depth: 0.014,
-            bevelEnabled: true,
-            bevelThickness: 0.004,
-            bevelSize: 0.004,
-            bevelSegments: 2,
-        });
-        vTailGeo.rotateY(Math.PI / 2);
-        const vTail = new THREE.Mesh(vTailGeo, navyMat);
-        vTail.position.set(-0.007, 0.035, -0.64);
-        group.add(vTail);
-
-        const vBandShape = new THREE.Shape();
-        vBandShape.moveTo(0.08, 0.05);
-        vBandShape.lineTo(0.24, 0.27);
-        vBandShape.lineTo(0.29, 0.27);
-        vBandShape.lineTo(0.14, 0.05);
-        vBandShape.closePath();
-        const vBandGeo = new THREE.ExtrudeGeometry(vBandShape, { depth: 0.016, bevelEnabled: false });
-        vBandGeo.rotateY(Math.PI / 2);
-        const vBand = new THREE.Mesh(vBandGeo, accentMat);
-        vBand.position.set(-0.008, 0.035, -0.64);
-        group.add(vBand);
-
-        // 6. Retractable Tricycle Landing Gear (Nose + Twin Main Bogies)
-        const gearConfigs = [
-            { x: 0, y: -0.085, z: 0.62, len: 0.085, wheelRadius: 0.021 },
-            { x: -0.14, y: -0.055, z: -0.03, len: 0.115, wheelRadius: 0.028 },
-            { x: 0.14, y: -0.055, z: -0.03, len: 0.115, wheelRadius: 0.028 },
-        ];
-
-        gearConfigs.forEach((cfg) => {
-            const gearGroup = new THREE.Group();
-            gearGroup.position.set(cfg.x, cfg.y, cfg.z);
-
-            const strut = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.008, 0.007, cfg.len, 10),
-                metalMat
-            );
-            strut.position.y = -cfg.len * 0.5;
-            gearGroup.add(strut);
-
-            const wheelGeo = new THREE.CylinderGeometry(cfg.wheelRadius, cfg.wheelRadius, 0.016, 14);
-            wheelGeo.rotateZ(Math.PI / 2);
-
-            const leftWheel = new THREE.Mesh(wheelGeo, darkFanMat);
-            leftWheel.position.set(-0.013, -cfg.len, 0);
-            gearGroup.add(leftWheel);
-
-            const rightWheel = new THREE.Mesh(wheelGeo, darkFanMat);
-            rightWheel.position.set(0.013, -cfg.len, 0);
-            gearGroup.add(rightWheel);
-
-            gearParts.push({ group: gearGroup });
-            group.add(gearGroup);
-        });
-
-        // 7. Navigation Wingtip Lights & Belly Beacon
-        const portLight = new THREE.Mesh(
-            new THREE.SphereGeometry(0.011, 8, 8),
-            new THREE.MeshBasicMaterial({ color: 0xff5a5a })
-        );
-        portLight.position.set(-0.985, 0.048, -0.29);
-        group.add(portLight);
-
-        const stbdLight = new THREE.Mesh(
-            new THREE.SphereGeometry(0.011, 8, 8),
-            new THREE.MeshBasicMaterial({ color: 0x35e58a })
-        );
-        stbdLight.position.set(0.985, 0.048, -0.29);
-        group.add(stbdLight);
-
-        const navBeacon = new THREE.Mesh(
-            new THREE.SphereGeometry(0.012, 8, 8),
-            new THREE.MeshBasicMaterial({ color: 0xff6247, transparent: true, opacity: 0.7 })
-        );
-        navBeacon.position.set(0, -0.095, 0.08);
-        group.add(navBeacon);
-
-        return { aircraftGroup: group, fans, gearParts, navBeacon };
-    }
-
-    function createAirlinerLiveryTexture(THREE) {
-        const texCanvas = document.createElement('canvas');
-        texCanvas.width = 1024;
-        texCanvas.height = 512;
-        const ctx = texCanvas.getContext('2d');
-
-        const grad = ctx.createLinearGradient(0, 0, texCanvas.width, 0);
-        grad.addColorStop(0.0, '#D7E3EC');
-        grad.addColorStop(0.24, '#F7FAFD');
-        grad.addColorStop(0.5, '#FFFFFF');
-        grad.addColorStop(0.76, '#F7FAFD');
-        grad.addColorStop(1.0, '#D7E3EC');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, texCanvas.width, texCanvas.height);
-
-        ctx.fillStyle = '#1CA8CB';
-        ctx.fillRect(texCanvas.width * 0.255, texCanvas.height * 0.26, 5, texCanvas.height * 0.56);
-        ctx.fillRect(texCanvas.width * 0.74, texCanvas.height * 0.26, 5, texCanvas.height * 0.56);
-
-        ctx.fillStyle = '#1A3444';
-        for (let y = texCanvas.height * 0.28; y < texCanvas.height * 0.78; y += 11) {
-            ctx.beginPath();
-            ctx.roundRect(texCanvas.width * 0.285, y, 6, 4.5, 2);
-            ctx.roundRect(texCanvas.width * 0.71, y, 6, 4.5, 2);
-            ctx.fill();
-        }
-
-        ctx.fillStyle = '#142733';
-        ctx.beginPath();
-        ctx.roundRect(texCanvas.width * 0.37, texCanvas.height * 0.865, texCanvas.width * 0.26, 15, 5);
-        ctx.fill();
-
-        const texture = new THREE.CanvasTexture(texCanvas);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.anisotropy = 4;
-        return texture;
-    }
-
-    // =========================================================================
-    // Fallback 2.5D Perspective SVG Airliner Renderer (Non-WebGL Devices)
-    // =========================================================================
-    function createFallbackPlaneRenderer(el, gearEl) {
-        return {
-            update(flight) {
-                const rotZ = -flight.pitchAngle * (180 / Math.PI);
-                const rotX = flight.bankRoll * 32;
-                const scale = flight.depthScale;
-                const gearLiftPx = 12 * scale * flight.gearDeploy;
-
-                if (gearEl) {
-                    gearEl.style.opacity = flight.gearDeploy.toFixed(2);
+                            renderer.render(scene, camera);
+                        },
+                        dispose() {
+                            window.removeEventListener('resize', handleResize);
+                            envRT.dispose();
+                            scene.traverse((obj) => {
+                                if (obj.geometry) {
+                                    obj.geometry.dispose();
+                                }
+                                if (obj.material) {
+                                    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+                                    mats.forEach((m) => {
+                                        if (m.map) {
+                                            m.map.dispose();
+                                        }
+                                        m.dispose();
+                                    });
+                                }
+                            });
+                            renderer.dispose();
+                        },
+                    });
+                },
+                undefined,
+                (err) => {
+                    renderer.dispose();
+                    envRT.dispose();
+                    reject(err || new Error('Failed to load GLB'));
                 }
+            );
+        });
+    }
+
+    // =========================================================================
+    // Non-WebGL 2.5D Perspective Red & White 3-Blade Helicopter Fallback
+    // =========================================================================
+    function createFallbackHeliRenderer(el, mainRotorEl, tailRotorEl) {
+        let mainDeg = 0;
+        let tailDeg = 0;
+
+        return {
+            update(flight, dt) {
+                if (flight.hasDisappeared || flight.opacity <= 0.01) {
+                    el.style.opacity = '0';
+                    return;
+                }
+
+                mainDeg = (mainDeg + dt * flight.mainRotorSpeed * (180 / Math.PI)) % 360;
+                tailDeg = (tailDeg + dt * flight.tailRotorSpeed * (180 / Math.PI)) % 360;
+
+                if (mainRotorEl) {
+                    mainRotorEl.setAttribute(
+                        'transform',
+                        `translate(183 31) scale(1 0.24) rotate(${mainDeg.toFixed(1)})`
+                    );
+                }
+
+                if (tailRotorEl) {
+                    tailRotorEl.setAttribute('transform', `translate(31 79) rotate(${tailDeg.toFixed(1)})`);
+                }
+
+                const tiltDeg = flight.forwardPitch * (180 / Math.PI);
+                const scale = flight.depthScale;
+                const elH = el.offsetHeight || 105;
+                const skidOffsetPx = elH * 0.33 * scale;
 
                 el.style.opacity = flight.opacity.toFixed(3);
                 el.style.transform =
-                    `translate3d(calc(-50% + ${flight.screenX.toFixed(1)}px), calc(-50% + ${(flight.screenY - gearLiftPx).toFixed(1)}px), 0) ` +
-                    `rotateX(${rotX.toFixed(1)}deg) ` +
-                    `rotateZ(${rotZ.toFixed(2)}deg) ` +
+                    `translate3d(calc(-50% + ${flight.screenX.toFixed(1)}px), calc(-50% + ${(flight.screenY - skidOffsetPx).toFixed(1)}px), 0) ` +
+                    `rotateZ(${tiltDeg.toFixed(2)}deg) ` +
                     `scale(${scale.toFixed(3)})`;
             },
-            dispose() {},
+            dispose() { },
         };
     }
 })();

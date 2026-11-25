@@ -70,44 +70,93 @@ html.om-intro-revealing .site-footer {
     transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Sky Backdrop & Atmospheric Depth */
+/* Sky Backdrop & Photorealistic Scenery Plate */
 .om-loader-sky {
     position: absolute;
     inset: 0;
     background: linear-gradient(
         180deg,
-        #7EC3EA 0%,
-        #9ED6F3 28%,
-        #C5E8F9 64%,
-        #E6F4FC 88%,
-        #F4FAFE 100%
+        #68B3E4 0%,
+        #8CC8EE 28%,
+        #BBE1F6 58%,
+        #E0F1FA 80%,
+        #EEF7FC 100%
     );
     z-index: 1;
 }
 
+.om-loader-scenery-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 0% 100%;
+    transform-origin: 28% 82%;
+    will-change: transform;
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
 .om-loader-sunlight {
     position: absolute;
-    inset: -15% -10% auto -10%;
-    height: 75%;
+    inset: -18% auto auto -10%;
+    width: 72%;
+    height: 72%;
     background: radial-gradient(
-        ellipse 60% 55% at 68% 18%,
-        rgba(255, 252, 240, 0.62) 0%,
-        rgba(255, 251, 238, 0.24) 42%,
-        rgba(255, 255, 255, 0) 75%
+        ellipse 54% 50% at 20% 24%,
+        rgba(255, 250, 228, 0.34) 0%,
+        rgba(255, 246, 212, 0.14) 38%,
+        rgba(255, 255, 255, 0) 74%
     );
     pointer-events: none;
     z-index: 2;
 }
 
+.om-loader-sunrays {
+    position: absolute;
+    inset: -20% -10% 10% -15%;
+    background:
+        conic-gradient(
+            from 118deg at 14% 18%,
+            rgba(255, 251, 234, 0) 0deg,
+            rgba(255, 251, 234, 0.06) 6deg,
+            rgba(255, 251, 234, 0) 13deg,
+            rgba(255, 251, 234, 0) 20deg,
+            rgba(255, 251, 234, 0.045) 26deg,
+            rgba(255, 251, 234, 0) 34deg,
+            rgba(255, 251, 234, 0) 42deg,
+            rgba(255, 251, 234, 0.035) 48deg,
+            rgba(255, 251, 234, 0) 58deg,
+            rgba(255, 251, 234, 0) 360deg
+        );
+    pointer-events: none;
+    z-index: 2;
+    animation: omSunrayShift 14s ease-in-out infinite alternate;
+}
+
+@keyframes omSunrayShift {
+    from {
+        opacity: 0.7;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(1%, 0.6%, 0) scale(1.025);
+    }
+}
+
 .om-loader-horizon-haze {
     position: absolute;
-    inset: auto 0 0 0;
-    height: 36%;
+    inset: auto 0 18% 0;
+    height: 24%;
     background: linear-gradient(
         180deg,
-        rgba(235, 247, 254, 0) 0%,
-        rgba(240, 249, 254, 0.45) 62%,
-        rgba(248, 252, 255, 0.72) 100%
+        rgba(232, 245, 253, 0) 0%,
+        rgba(238, 248, 254, 0.18) 60%,
+        rgba(235, 246, 252, 0) 100%
     );
     pointer-events: none;
     z-index: 2;
@@ -134,7 +183,7 @@ html.om-intro-revealing .site-footer {
     pointer-events: none;
 }
 
-.om-loader-webgl-canvas {
+.om-loader-rotorwash-canvas {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -144,29 +193,39 @@ html.om-intro-revealing .site-footer {
     pointer-events: none;
 }
 
-/* Lightweight Non-WebGL 2.5D Fallback Stage */
+.om-loader-webgl-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 6;
+    pointer-events: none;
+}
+
+/* Lightweight Non-WebGL 2.5D Helicopter Fallback Stage */
 .om-loader-fallback-stage {
     position: absolute;
     inset: 0;
-    z-index: 5;
+    z-index: 6;
     perspective: 960px;
     perspective-origin: 50% 48%;
     pointer-events: none;
     overflow: hidden;
 }
 
-.om-loader-fallback-plane {
+.om-loader-fallback-heli {
     position: absolute;
     left: 0;
     top: 0;
-    width: clamp(96px, 10.5vw, 160px);
-    aspect-ratio: 280 / 140;
+    width: clamp(150px, 16.5vw, 250px);
+    aspect-ratio: 280 / 150;
     transform-origin: center center;
     will-change: transform, opacity;
-    filter: drop-shadow(0 12px 18px rgba(17, 61, 72, 0.14));
+    filter: drop-shadow(0 12px 18px rgba(17, 61, 72, 0.18));
 }
 
-.om-loader-fallback-plane svg {
+.om-loader-fallback-heli svg {
     width: 100%;
     height: 100%;
     display: block;
@@ -175,18 +234,18 @@ html.om-intro-revealing .site-footer {
 /* Existing Website Brand Logo Lockup */
 .om-loader-brand {
     position: relative;
-    z-index: 6;
-    margin-top: clamp(28px, 5.2vh, 52px);
+    z-index: 7;
+    margin-top: clamp(26px, 4.8vh, 48px);
     display: inline-flex;
     align-items: center;
-    gap: 11px;
-    padding: 8px 18px 8px 12px;
+    gap: 12px;
+    padding: 9px 20px 9px 12px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.42);
-    border: 1px solid rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 10px 30px rgba(17, 61, 72, 0.08);
+    background: rgba(255, 255, 255, 0.64);
+    border: 1px solid rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 12px 32px rgba(17, 61, 72, 0.11), 0 2px 8px rgba(17, 61, 72, 0.05);
     opacity: 0;
     transform: translate3d(0, -10px, 0);
     animation: omLoaderFadeDown 1.15s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
@@ -233,17 +292,23 @@ html.om-intro-revealing .site-footer {
     color: #158AA8;
 }
 
-/* Bottom Tagline & Thin Progress Bar — positioned clear of bottom-left airport */
+/* Bottom Tagline & Thin Progress Bar — crisp readable lockup over valley horizon */
 .om-loader-bottom {
     position: absolute;
-    right: clamp(24px, 4.5vw, 56px);
-    bottom: clamp(24px, 4.8vh, 48px);
-    z-index: 6;
+    right: clamp(22px, 4.2vw, 52px);
+    bottom: clamp(20px, 4.2vh, 42px);
+    z-index: 7;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 12px;
-    padding: 0;
+    gap: 10px;
+    padding: 11px 18px 13px;
+    border-radius: 14px;
+    background: rgba(246, 251, 253, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 10px 28px rgba(14, 48, 56, 0.12);
     text-align: right;
     opacity: 0;
     transform: translate3d(0, 10px, 0);
@@ -253,12 +318,11 @@ html.om-intro-revealing .site-footer {
 .om-loader-tagline {
     margin: 0;
     font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
-    font-size: clamp(11px, 1.15vw, 13.5px);
+    font-size: clamp(11px, 1.1vw, 13px);
     font-weight: 700;
-    letter-spacing: 0.28em;
+    letter-spacing: 0.26em;
     text-transform: uppercase;
     color: #113D48;
-    text-shadow: 0 1px 14px rgba(255, 255, 255, 0.92);
 }
 
 .om-loader-progress-track {
@@ -304,14 +368,18 @@ html.om-intro-revealing .site-footer {
 
 /* Responsive Proportions */
 @media (max-width: 1024px) {
-    .om-loader-fallback-plane {
-        width: clamp(82px, 12.5vw, 130px);
+    .om-loader-fallback-heli {
+        width: clamp(134px, 19vw, 200px);
     }
 }
 
 @media (max-width: 767px) {
-    .om-loader-fallback-plane {
-        width: clamp(64px, 16vw, 96px);
+    .om-loader-scenery-img {
+        object-position: 18% 100%;
+    }
+
+    .om-loader-fallback-heli {
+        width: clamp(94px, 24vw, 140px);
     }
 
     .om-loader-brand {

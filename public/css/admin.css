@@ -1089,6 +1089,104 @@ textarea.form-control {
     }
 
     .admin-content {
-        padding: 20px;
+        padding: 20px 16px;
+    }
+
+    .customer-hero-banner {
+        padding: 22px 20px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .admin-topbar {
+        padding: 10px 24px;
+    }
+
+    .admin-content {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-topbar {
+        padding: 10px 14px;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .admin-page-title {
+        font-size: 17px;
+    }
+
+    .admin-topbar-right {
+        gap: 8px;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .admin-content {
+        padding: 16px 12px;
+    }
+
+    .panel-body,
+    .detail-section-pad {
+        padding: 16px;
+    }
+
+    .customer-hero-banner h2 {
+        font-size: 20px;
+    }
+}
+
+/* ==========================================================================
+   PORTAL CARD COMPACTNESS & TYPOGRAPHY MINIMUMS
+   ========================================================================== */
+.kpi-card {
+    padding: 16px 18px;
+}
+
+.kpi-label,
+.kpi-sub,
+.form-label,
+.detail-meta-row,
+.detail-highlight-item {
+    font-size: 14px;
+}
+
+.kpi-value {
+    font-size: 24px;
+}
+
+.panel-card {
+    padding: 18px 20px;
+    margin-bottom: 20px;
+}
+
+.panel-header {
+    margin-bottom: 14px;
+}
+
+.panel-title {
+    font-size: 17px;
+}
+
+.detail-section-pad {
+    padding: 18px 20px;
+}
+
+.customer-hero-banner {
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .kpi-card,
+    .panel-card,
+    .detail-section-pad {
+        padding: 14px 16px;
+    }
+
+    .customer-hero-banner {
+        padding: 18px 16px;
     }
 }

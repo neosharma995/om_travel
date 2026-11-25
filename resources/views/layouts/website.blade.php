@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="{{ asset('css/website.css') }}?v={{ filemtime(public_path('css/website.css')) }}">
     @if (request()->routeIs('home'))
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+        <link rel="preload" as="image" href="{{ asset('images/loader/himalayan-helipad-bg.jpg') }}">
+        <link rel="preload" as="fetch" crossorigin href="{{ asset('models/as350-tourist.glb') }}">
         <link rel="stylesheet" href="{{ asset('css/airplane-loader.css') }}?v={{ filemtime(public_path('css/airplane-loader.css')) }}">
         <script>
             (function () {
@@ -260,9 +262,7 @@
                     <div class="footer-copyright">
                         &copy; {{ date('Y') }} {{ $siteSettings['site_name'] ?? 'OmTravel' }}. All Rights Reserved.
                     </div>
-                    <div class="footer-credit">
-                        Designed with <span class="heart-icon">&hearts;</span> for Travelers
-                    </div>
+                    
                 </div>
             </div>
         </footer>

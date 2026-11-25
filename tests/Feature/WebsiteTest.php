@@ -680,7 +680,7 @@ test('tours index category filter includes child category tours when parent cate
         ->assertDontSee($otherTour->title);
 });
 
-test('homepage includes airplane intro loader and internal pages omit it', function () {
+test('homepage includes helicopter intro loader and internal pages omit it', function () {
     SiteSetting::setMany([
         'site_name' => 'OmTravel',
         'site_tagline' => 'Explore World',
@@ -689,7 +689,11 @@ test('homepage includes airplane intro loader and internal pages omit it', funct
     $this->get(route('home'))
         ->assertOk()
         ->assertSee('id="omIntroLoader"', false)
+        ->assertSee('id="omLoaderSceneryImg"', false)
+        ->assertSee('images/loader/himalayan-helipad-bg.jpg')
+        ->assertSee('models/as350-tourist.glb')
         ->assertSee('id="omLoaderAirportCanvas"', false)
+        ->assertSee('id="omLoaderRotorWashCanvas"', false)
         ->assertSee('YOUR JOURNEY BEGINS HERE')
         ->assertSee('css/airplane-loader.css')
         ->assertSee('js/airplane-loader.js')
