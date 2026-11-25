@@ -8,8 +8,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/website.css') }}?v={{ filemtime(public_path('css/website.css')) }}">
+    @if (request()->routeIs('home'))
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+        <link rel="stylesheet" href="{{ asset('css/airplane-loader.css') }}?v={{ filemtime(public_path('css/airplane-loader.css')) }}">
+        <script>
+            (function () {
+                try {
+                    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    if (!reduced && !window.sessionStorage.getItem('omtravel_intro_played')) {
+                        document.documentElement.classList.add('om-intro-active');
+                    }
+                } catch (e) {}
+            })();
+        </script>
+    @endif
 </head>
 <body>
+    @if (request()->routeIs('home'))
+        @include('partials.airplane-loader')
+        <script src="{{ asset('js/airplane-loader.js') }}?v={{ filemtime(public_path('js/airplane-loader.js')) }}"></script>
+    @endif
     <div class="top-bar">
         <div class="container-wide top-bar-inner">
             <div class="top-bar-info">

@@ -281,9 +281,15 @@ function initHeroSlider() {
         }
     }, { passive: true });
 
-    // Initialize first slide and start autoplay loop
+    // Initialize first slide and start autoplay loop (sync with intro loader if active)
     updateSlide(0);
-    startAutoplay();
+    if (document.documentElement.classList.contains('om-intro-active')) {
+        window.addEventListener('om:intro-complete', () => {
+            startAutoplay();
+        }, { once: true });
+    } else {
+        startAutoplay();
+    }
 }
 
 function initMobileNav() {

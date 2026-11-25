@@ -679,3 +679,29 @@ test('tours index category filter includes child category tours when parent cate
         ->assertSee($childTour->title)
         ->assertDontSee($otherTour->title);
 });
+
+test('homepage includes airplane intro loader and internal pages omit it', function () {
+    SiteSetting::setMany([
+        'site_name' => 'OmTravel',
+        'site_tagline' => 'Explore World',
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('id="omIntroLoader"', false)
+        ->assertSee('id="omLoaderAirportCanvas"', false)
+        ->assertSee('YOUR JOURNEY BEGINS HERE')
+        ->assertSee('css/airplane-loader.css')
+        ->assertSee('js/airplane-loader.js')
+        ->assertSee('omtravel_intro_played')
+        ->assertDontSee('tailwindcss');
+
+    $this->get(route('tours.index'))
+        ->assertOk()
+        ->assertDontSee('id="omIntroLoader"', false)
+        ->assertDontSee('YOUR JOURNEY BEGINS HERE');
+
+    $this->get(route('contact.create'))
+        ->assertOk()
+        ->assertDontSee('id="omIntroLoader"', false);
+});

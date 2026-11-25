@@ -1,0 +1,381 @@
+/* ==========================================================================
+   OmTravel — Premium Full-Screen Airplane Loading Experience
+   ========================================================================== */
+
+.om-intro-loader {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 99999;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    background-color: #9BD4F2;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* Activate before first paint when pre-paint <head> script sets html.om-intro-active */
+html.om-intro-active,
+html.om-intro-active body {
+    overflow: hidden !important;
+}
+
+html.om-intro-active .om-intro-loader {
+    display: flex;
+}
+
+/* Hold underlying homepage in gentle pre-reveal state until airplane exits */
+html.om-intro-active .top-bar,
+html.om-intro-active .site-header,
+html.om-intro-active main,
+html.om-intro-active .site-footer {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    will-change: opacity, transform;
+}
+
+html.om-intro-active .hero-slide.is-active .hero-kicker,
+html.om-intro-active .hero-slide.is-active .hero-script,
+html.om-intro-active .hero-slide.is-active .hero-title,
+html.om-intro-active .hero-slide.is-active .hero-desc,
+html.om-intro-active .hero-slide.is-active .hero-actions {
+    opacity: 0 !important;
+    transform: translate3d(0, 16px, 0) !important;
+    transition: none !important;
+}
+
+/* Smooth cross-fade reveal into homepage */
+html.om-intro-revealing .om-intro-loader {
+    display: flex;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.9s ease;
+}
+
+html.om-intro-revealing .top-bar,
+html.om-intro-revealing .site-header,
+html.om-intro-revealing main,
+html.om-intro-revealing .site-footer {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Sky Backdrop & Atmospheric Depth */
+.om-loader-sky {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        #7EC3EA 0%,
+        #9ED6F3 28%,
+        #C5E8F9 64%,
+        #E6F4FC 88%,
+        #F4FAFE 100%
+    );
+    z-index: 1;
+}
+
+.om-loader-sunlight {
+    position: absolute;
+    inset: -15% -10% auto -10%;
+    height: 75%;
+    background: radial-gradient(
+        ellipse 60% 55% at 68% 18%,
+        rgba(255, 252, 240, 0.62) 0%,
+        rgba(255, 251, 238, 0.24) 42%,
+        rgba(255, 255, 255, 0) 75%
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+.om-loader-horizon-haze {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 36%;
+    background: linear-gradient(
+        180deg,
+        rgba(235, 247, 254, 0) 0%,
+        rgba(240, 249, 254, 0.45) 62%,
+        rgba(248, 252, 255, 0.72) 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Canvases */
+.om-loader-clouds-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.om-loader-airport-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.om-loader-webgl-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Lightweight Non-WebGL 2.5D Fallback Stage */
+.om-loader-fallback-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    perspective: 960px;
+    perspective-origin: 50% 48%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.om-loader-fallback-plane {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: clamp(96px, 10.5vw, 160px);
+    aspect-ratio: 280 / 140;
+    transform-origin: center center;
+    will-change: transform, opacity;
+    filter: drop-shadow(0 12px 18px rgba(17, 61, 72, 0.14));
+}
+
+.om-loader-fallback-plane svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Existing Website Brand Logo Lockup */
+.om-loader-brand {
+    position: relative;
+    z-index: 6;
+    margin-top: clamp(28px, 5.2vh, 52px);
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    padding: 8px 18px 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(17, 61, 72, 0.08);
+    opacity: 0;
+    transform: translate3d(0, -10px, 0);
+    animation: omLoaderFadeDown 1.15s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+
+.om-loader-brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22BBDD 0%, #1693B1 100%);
+    box-shadow: 0 4px 12px rgba(28, 168, 203, 0.32);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    flex-shrink: 0;
+}
+
+.om-loader-brand-mark svg {
+    width: 18px;
+    height: 18px;
+}
+
+.om-loader-brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.om-loader-brand-name {
+    font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
+    font-size: 19px;
+    font-weight: 800;
+    color: #113D48;
+    letter-spacing: -0.02em;
+}
+
+.om-loader-brand-sub {
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #158AA8;
+}
+
+/* Bottom Tagline & Thin Progress Bar — positioned clear of bottom-left airport */
+.om-loader-bottom {
+    position: absolute;
+    right: clamp(24px, 4.5vw, 56px);
+    bottom: clamp(24px, 4.8vh, 48px);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+    padding: 0;
+    text-align: right;
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+    animation: omLoaderFadeUp 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards;
+}
+
+.om-loader-tagline {
+    margin: 0;
+    font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
+    font-size: clamp(11px, 1.15vw, 13.5px);
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: #113D48;
+    text-shadow: 0 1px 14px rgba(255, 255, 255, 0.92);
+}
+
+.om-loader-progress-track {
+    width: min(240px, 54vw);
+    height: 2px;
+    border-radius: 999px;
+    background: rgba(17, 61, 72, 0.14);
+    overflow: hidden;
+    position: relative;
+}
+
+.om-loader-progress-fill {
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #113D48 0%, #1CA8CB 65%, #4AD2EE 100%);
+    transform-origin: left center;
+    transform: scaleX(0);
+    will-change: transform;
+}
+
+@keyframes omLoaderFadeDown {
+    from {
+        opacity: 0;
+        transform: translate3d(0, -10px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes omLoaderFadeUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 10px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* Responsive Proportions */
+@media (max-width: 1024px) {
+    .om-loader-fallback-plane {
+        width: clamp(82px, 12.5vw, 130px);
+    }
+}
+
+@media (max-width: 767px) {
+    .om-loader-fallback-plane {
+        width: clamp(64px, 16vw, 96px);
+    }
+
+    .om-loader-brand {
+        padding: 7px 14px 7px 10px;
+        gap: 9px;
+    }
+
+    .om-loader-brand-mark {
+        width: 32px;
+        height: 32px;
+    }
+
+    .om-loader-brand-name {
+        font-size: 16.5px;
+    }
+
+    .om-loader-bottom {
+        left: 50%;
+        right: auto;
+        bottom: 20px;
+        width: max-content;
+        max-width: calc(100vw - 32px);
+        align-items: center;
+        text-align: center;
+        transform: translate3d(-50%, 10px, 0);
+        animation: omLoaderFadeUpMobile 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.35s forwards;
+    }
+
+    .om-loader-tagline {
+        letter-spacing: 0.18em;
+    }
+
+    .om-loader-progress-track {
+        width: min(210px, 58vw);
+    }
+}
+
+@keyframes omLoaderFadeUpMobile {
+    from {
+        opacity: 0;
+        transform: translate3d(-50%, 10px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(-50%, 0, 0);
+    }
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .om-intro-loader {
+        display: none !important;
+    }
+
+    html.om-intro-active,
+    html.om-intro-active body {
+        overflow: visible !important;
+    }
+
+    html.om-intro-active .top-bar,
+    html.om-intro-active .site-header,
+    html.om-intro-active main,
+    html.om-intro-active .site-footer {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
