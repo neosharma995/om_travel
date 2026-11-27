@@ -680,32 +680,48 @@ test('tours index category filter includes child category tours when parent cate
         ->assertDontSee($otherTour->title);
 });
 
-test('homepage includes helicopter intro loader and internal pages omit it', function () {
+test('homepage places helicopter takeoff animation inside first hero slide without page loader', function () {
     SiteSetting::setMany([
         'site_name' => 'OmTravel',
         'site_tagline' => 'Explore World',
     ]);
 
-    $this->get(route('home'))
+    $response = $this->get(route('home'))
         ->assertOk()
+        ->assertSee('data-autoplay="false"', false)
         ->assertSee('id="omIntroLoader"', false)
         ->assertSee('id="omLoaderSceneryImg"', false)
         ->assertSee('images/loader/himalayan-helipad-bg.jpg')
         ->assertSee('models/as350-tourist.glb')
         ->assertSee('id="omLoaderAirportCanvas"', false)
         ->assertSee('id="omLoaderRotorWashCanvas"', false)
-        ->assertSee('YOUR JOURNEY BEGINS HERE')
         ->assertSee('css/airplane-loader.css')
         ->assertSee('js/airplane-loader.js')
-        ->assertSee('omtravel_intro_played')
+        ->assertDontSee('omtravel_intro_played')
+        ->assertDontSee('om-intro-active')
+        ->assertDontSee('YOUR JOURNEY BEGINS HERE')
         ->assertDontSee('tailwindcss');
+
+    $html = $response->getContent();
+    $firstSlidePos = strpos($html, 'data-slide-index="0"');
+    $secondSlidePos = strpos($html, 'data-slide-index="1"');
+    $loaderPos = strpos($html, 'id="omIntroLoader"');
+
+    expect($firstSlidePos)->not->toBeFalse();
+    expect($secondSlidePos)->not->toBeFalse();
+    expect($loaderPos)->toBeGreaterThan($firstSlidePos);
+    expect($loaderPos)->toBeLessThan($secondSlidePos);
+    expect(substr_count($html, 'id="omIntroLoader"'))->toBe(1);
 
     $this->get(route('tours.index'))
         ->assertOk()
         ->assertDontSee('id="omIntroLoader"', false)
-        ->assertDontSee('YOUR JOURNEY BEGINS HERE');
+        ->assertDontSee('css/airplane-loader.css')
+        ->assertDontSee('js/airplane-loader.js');
 
     $this->get(route('contact.create'))
         ->assertOk()
-        ->assertDontSee('id="omIntroLoader"', false);
+        ->assertDontSee('id="omIntroLoader"', false)
+        ->assertDontSee('css/airplane-loader.css')
+        ->assertDontSee('js/airplane-loader.js');
 });

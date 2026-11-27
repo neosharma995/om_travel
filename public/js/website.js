@@ -58,12 +58,7 @@ function initHeroSlider() {
 
     let currentIndex = 0;
     const totalSlides = slides.length;
-    const intervalDuration = parseInt(slider.getAttribute('data-interval'), 10) || 6000;
-    let autoplayTimer = null;
-    let isPaused = false;
     let isTransitioning = false;
-    let progressStartTime = 0;
-    let progressAnimFrame = null;
 
     let dots = [];
     if (dotsContainer) {
@@ -86,7 +81,6 @@ function initHeroSlider() {
         if (progressFill) {
             progressFill.style.width = '0%';
         }
-        progressStartTime = performance.now();
     };
 
     const updateSlide = (nextIndex, isManual = false) => {
@@ -146,61 +140,11 @@ function initHeroSlider() {
         updateSlide(currentIndex - 1, isManual);
     };
 
-    const runProgressBar = (timestamp) => {
-        if (!isPaused && progressFill) {
-            if (!progressStartTime) {
-                progressStartTime = timestamp;
-            }
-            const elapsed = timestamp - progressStartTime;
-            const percentage = Math.min((elapsed / intervalDuration) * 100, 100);
-            progressFill.style.width = `${percentage}%`;
-        }
-        if (autoplayTimer) {
-            progressAnimFrame = window.requestAnimationFrame(runProgressBar);
-        }
-    };
-
-    const stopAutoplay = () => {
-        if (autoplayTimer) {
-            window.clearInterval(autoplayTimer);
-            autoplayTimer = null;
-        }
-        if (progressAnimFrame) {
-            window.cancelAnimationFrame(progressAnimFrame);
-            progressAnimFrame = null;
-        }
-    };
-
-    const startAutoplay = () => {
-        stopAutoplay();
-        isPaused = false;
-        resetProgress();
-        progressAnimFrame = window.requestAnimationFrame(runProgressBar);
-
-        autoplayTimer = window.setInterval(() => {
-            if (!isPaused && !document.hidden) {
-                nextSlide(false);
-            }
-        }, intervalDuration);
-    };
-
-    const pauseAutoplay = () => {
-        isPaused = true;
-    };
-
-    const resumeAutoplay = () => {
-        if (!document.hidden) {
-            isPaused = false;
-            resetProgress();
-        }
-    };
-
-    // Manual navigation event listeners with immediate autoplay reset
+    // Manual-only navigation event listeners (hero slider autoplay intentionally disabled)
     if (prevBtn) {
         prevBtn.addEventListener('click', (e) => {
             e.preventDefault();
             prevSlide(true);
-            startAutoplay();
         });
     }
 
@@ -208,7 +152,6 @@ function initHeroSlider() {
         nextBtn.addEventListener('click', (e) => {
             e.preventDefault();
             nextSlide(true);
-            startAutoplay();
         });
     }
 
@@ -216,33 +159,15 @@ function initHeroSlider() {
         dot.addEventListener('click', (e) => {
             e.preventDefault();
             updateSlide(idx, true);
-            startAutoplay();
         });
-    });
-
-    // Pause on hover / focus, resume on mouse leave / blur
-    slider.addEventListener('mouseenter', pauseAutoplay);
-    slider.addEventListener('mouseleave', resumeAutoplay);
-    slider.addEventListener('focusin', pauseAutoplay);
-    slider.addEventListener('focusout', resumeAutoplay);
-
-    // Browser tab visibility handling: pauses when inactive, resumes without stuttering
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            stopAutoplay();
-        } else {
-            startAutoplay();
-        }
     });
 
     // Keyboard navigation
     slider.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') {
             prevSlide(true);
-            startAutoplay();
         } else if (e.key === 'ArrowRight') {
             nextSlide(true);
-            startAutoplay();
         }
     });
 
@@ -257,7 +182,6 @@ function initHeroSlider() {
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
         }
-        pauseAutoplay();
     }, { passive: true });
 
     slider.addEventListener('touchend', (e) => {
@@ -274,22 +198,13 @@ function initHeroSlider() {
                 } else {
                     prevSlide(true);
                 }
-                startAutoplay();
-            } else {
-                resumeAutoplay();
             }
         }
     }, { passive: true });
 
-    // Initialize first slide and start autoplay loop (sync with intro loader if active)
+    // Initialize first slide and keep stationary until manual interaction
     updateSlide(0);
-    if (document.documentElement.classList.contains('om-intro-active')) {
-        window.addEventListener('om:intro-complete', () => {
-            startAutoplay();
-        }, { once: true });
-    } else {
-        startAutoplay();
-    }
+    resetProgress();
 }
 
 function initMobileNav() {

@@ -55,10 +55,13 @@
         ];
     @endphp
 
-    <section class="hero-section" id="heroSlider" aria-label="Hero Showcase" data-autoplay="true" data-interval="6000">
+    <section class="hero-section" id="heroSlider" aria-label="Hero Showcase" data-autoplay="false" data-interval="6000">
         <div class="hero-slides">
             @foreach ($heroSlides as $index => $slide)
                 <div class="hero-slide {{ $loop->first ? 'is-active' : '' }}" data-slide-index="{{ $index }}" style="background-image: url('{{ $slide['image'] }}');">
+                    @if ($loop->first)
+                        @include('partials.airplane-loader')
+                    @endif
                     <div class="hero-overlay"></div>
                     <div class="container hero-slide-container">
                         <div class="hero-content">

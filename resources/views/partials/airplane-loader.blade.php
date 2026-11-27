@@ -1,8 +1,6 @@
 <div class="om-intro-loader"
      id="omIntroLoader"
-     role="status"
-     aria-live="polite"
-     aria-label="Loading {{ $siteSettings['site_name'] ?? 'OmTravel' }}">
+     aria-hidden="true">
     <div class="om-loader-sky" aria-hidden="true"></div>
     <img class="om-loader-scenery-img"
          id="omLoaderSceneryImg"
@@ -38,6 +36,11 @@
                         <stop offset="55%" stop-color="#132632"/>
                         <stop offset="100%" stop-color="#09151D"/>
                     </linearGradient>
+                    <radialGradient id="omTailBeaconGlowGrad" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#FF5A48" stop-opacity="0.95"/>
+                        <stop offset="38%" stop-color="#FF2216" stop-opacity="0.48"/>
+                        <stop offset="100%" stop-color="#FF1E14" stop-opacity="0"/>
+                    </radialGradient>
                 </defs>
 
                 <!-- High-Skid Landing Gear (Dark Charcoal with Boarding Step) -->
@@ -57,12 +60,21 @@
                 <path d="M40 77 L25 46 L39 46 L52 77 Z" fill="url(#omAs350RedGrad)"/>
                 <path d="M42 82 L31 104 L39 104 L49 82 Z" fill="#F7FAFC" stroke="#C0CED8" stroke-width="0.7"/>
 
+                <!-- Blinking Red Tail Anti-Collision Beacon -->
+                <g id="omFallbackTailBeacon" transform="translate(29 45)">
+                    <circle id="omFallbackTailBeaconGlow" cx="0" cy="-1" r="12" fill="url(#omTailBeaconGlowGrad)" opacity="0.2"/>
+                    <rect x="-2.2" y="-0.2" width="4.4" height="2" rx="0.8" fill="#2A333B"/>
+                    <circle cx="0" cy="-1.2" r="2.1" fill="#C81812"/>
+                    <circle id="omFallbackTailBeaconCore" cx="0" cy="-1.4" r="1.35" fill="#FFD6CC" opacity="0.3"/>
+                </g>
+
                 <!-- 2-Blade Tail Rotor (Animated Independently) -->
                 <g id="omFallbackTailRotor" transform="translate(31 79)">
-                    <circle cx="0" cy="0" r="3" fill="#2A333B"/>
-                    <rect x="-1.6" y="-17" width="3.2" height="34" rx="1.2" fill="#222930"/>
-                    <rect x="-1.6" y="-17" width="3.2" height="4.5" fill="#F2C230"/>
-                    <rect x="-1.6" y="12.5" width="3.2" height="4.5" fill="#F2C230"/>
+                    <circle cx="0" cy="0" r="3.4" fill="#2A333B" stroke="#687684" stroke-width="0.6"/>
+                    <rect x="-1.8" y="-18" width="3.6" height="36" rx="1.2" fill="#2B343E"/>
+                    <rect x="-1.8" y="-18" width="3.6" height="4.8" fill="#F2C230"/>
+                    <rect x="-1.8" y="13.2" width="3.6" height="4.8" fill="#F2C230"/>
+                    <circle cx="0" cy="0" r="1.4" fill="#9AA7B2"/>
                 </g>
 
                 <!-- AS350 Aerodynamic Cabin (White Crown, Red Body, Crisp White Cheatline, White Belly) -->
@@ -110,26 +122,6 @@
                     </g>
                 </g>
             </svg>
-        </div>
-    </div>
-
-    <header class="om-loader-brand" id="omLoaderBrand" aria-hidden="true">
-        <span class="om-loader-brand-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-            </svg>
-        </span>
-        <span class="om-loader-brand-text">
-            <span class="om-loader-brand-name">{{ $siteSettings['site_name'] ?? 'OmTravel' }}</span>
-            <span class="om-loader-brand-sub">{{ $siteSettings['site_tagline'] ?? 'Explore World' }}</span>
-        </span>
-    </header>
-
-    <div class="om-loader-bottom" id="omLoaderBottom">
-        <p class="om-loader-tagline">YOUR JOURNEY BEGINS HERE</p>
-        <div class="om-loader-progress-track" aria-hidden="true">
-            <div class="om-loader-progress-fill" id="omLoaderProgressFill"></div>
         </div>
     </div>
 </div>

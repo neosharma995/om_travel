@@ -13,23 +13,9 @@
         <link rel="preload" as="image" href="{{ asset('images/loader/himalayan-helipad-bg.jpg') }}">
         <link rel="preload" as="fetch" crossorigin href="{{ asset('models/as350-tourist.glb') }}">
         <link rel="stylesheet" href="{{ asset('css/airplane-loader.css') }}?v={{ filemtime(public_path('css/airplane-loader.css')) }}">
-        <script>
-            (function () {
-                try {
-                    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                    if (!reduced && !window.sessionStorage.getItem('omtravel_intro_played')) {
-                        document.documentElement.classList.add('om-intro-active');
-                    }
-                } catch (e) {}
-            })();
-        </script>
     @endif
 </head>
 <body>
-    @if (request()->routeIs('home'))
-        @include('partials.airplane-loader')
-        <script src="{{ asset('js/airplane-loader.js') }}?v={{ filemtime(public_path('js/airplane-loader.js')) }}"></script>
-    @endif
     <div class="top-bar">
         <div class="container-wide top-bar-inner">
             <div class="top-bar-info">
@@ -285,5 +271,8 @@
     </div>
 
     <script src="{{ asset('js/website.js') }}?v={{ filemtime(public_path('js/website.js')) }}"></script>
+    @if (request()->routeIs('home'))
+        <script src="{{ asset('js/airplane-loader.js') }}?v={{ filemtime(public_path('js/airplane-loader.js')) }}"></script>
+    @endif
 </body>
 </html>
